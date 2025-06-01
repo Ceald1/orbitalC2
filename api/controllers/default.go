@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 
-	// "encoding/hex"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 
@@ -49,7 +49,7 @@ func (c *MainController) Get() {
 }
 
 // Agent Endpoints
-// register agent
+// register agent/authenticate
 func (c *AgentController) Register() {
 	var agentID = c.Ctx.Input.Param(":id")
 	valid := AuthAgent(agentID)
@@ -144,9 +144,44 @@ func (c *APIController) Agents() {
 
 }
 
+type Agent struct {
+	Agent_id string `json:"agent"`
+	Command string `json:"command"`
+	Directory string `json:"directory"`
+}
+
+type AgentID struct {
+	Id string `json:"id"`
+}
+
+
 // delete agent
 func (c *APIController) Del_Agent() {
-
+	var msg Message
+	var token = c.Ctx.Input.Header("Authorization")
+	err := Verify_JWT(token)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	var agentID AgentID
+	if err := c.Ctx.BindJSON(&agentID); err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+	
+	err = Del(agentID.Id)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":` +`"` + err.Error() + `"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	json.Unmarshal([]byte(`{"message":` +`200}`), &msg)
+	c.Data["json"] = msg
+	c.ServeJSON()
 }
 
 
@@ -154,8 +189,48 @@ func (c *APIController) Del_Agent() {
 
 // run command 
 func (c *APIController) RunCommand() {
+	var msg Message
+	var token = c.Ctx.Input.Header("Authorization")
+	err := Verify_JWT(token)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	var agent Agent
+	if err := c.Ctx.BindJSON(&agent); err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+	err = AddCommand(agent.Command, agent.Directory, agent.Agent_id)
+	if err != nil {
+			
+			json.Unmarshal([]byte(`{"message":` +`"` + err.Error() + `"}`), &msg)
+			c.Data["json"] = msg
+			c.ServeJSON()
+			return
+	}
+	c.Data["json"] = map[string]int{"message": 200}
+	c.ServeJSON()
 
 }
+
+func AddCommand(command, dir, agentID string) (err error) {
+	data, err := rdb.HGetAll(ctx, agentID).Result()
+	if err != nil {
+		return err
+	}
+	data["command"] = command
+	data["dir"] = dir
+	data["history"] = data["history"] + "," + base64.StdEncoding.EncodeToString([]byte(command))
+	_, err = rdb.HSet(ctx, agentID, data).Result()
+	if err != nil {
+		return err
+	}
+	return
+}
+
 
 type LoginInput struct {
 	Username string `json:"username"`
@@ -225,6 +300,11 @@ func AuthAgent(agent_id string) bool {
     }
 	return storedHash == hashPasswordSHA256(agent_id)
 }
+func Del(agent_id string) (err error){
+	_, err = rdb.Del(ctx, "agent:"+agent_id).Result()
+	return err
+}
+
 
 func ScanAgents() ([]byte, error) {
 	var cursor uint64
