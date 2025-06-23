@@ -3,10 +3,14 @@ package controllers
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
+	"os"
 
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+
+	"github.com/google/uuid"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/redis/go-redis/v9"
@@ -59,16 +63,62 @@ func (c *AgentController) Register() {
 		c.ServeJSON()
 		return
 	}
-	c.Data["json"] = map[string]int{"message": 200}
+	token, err := TokenGen(hashPasswordSHA256(agentID))
+	if err != nil {
+		c.Data["json"] = map[string]string{"message": err.Error()}
+		c.ServeJSON()
+		return
+	}
+	
+	c.Data["json"] = map[string]string{"message": token}
 	c.ServeJSON()
 }
+
+func (c *AgentController) GetCommand() {
+	var agentID = c.Ctx.Input.Param(":id")
+	var msg Message
+	valid := AuthAgent(agentID)
+	if !valid {
+
+		c.Data["json"] = map[string]int{"message": 404}
+		c.ServeJSON()
+		return
+	}
+
+
+	var token = c.Ctx.Input.Header("Authorization")
+	var secret = []byte(os.Getenv("secret"))
+	userID, err := TokenDecode(token, secret)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	if userID != agentID {
+		json.Unmarshal([]byte(`{"message":403}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+
+	// get plaintext id
+	PlaintextID, _ := rdb.Get(ctx, agentID).Result()
+	cmdData, _ := rdb.HGetAll(ctx, PlaintextID).Result()
+	delete(cmdData, "history")
+	c.Data["json"] = map[string]interface{}{"message": cmdData}
+	c.ServeJSON()
+
+}
+
+
 
 // Database Endpoints
 // clear database agents
 func (c *APIController) ClearAll() {
 	var msg Message
 	var token = c.Ctx.Input.Header("Authorization")
-	err := Verify_JWT(token)
+	err := VerifyAdmin(token)
 	if err != nil {
 		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
 		c.Data["json"] = msg
@@ -111,38 +161,94 @@ func ClearDB() (error){
 
     return nil
 }
+// create an agent id
+func (c *APIController) CreateAgent() {
+	var msg Message
+	var token = c.Ctx.Input.Header("Authorization")
+	err := VerifyAdmin(token)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	agentID := ""
+	for {
+		agentID = uuid.NewString()
+
+		var cursor uint64
+		var keys []string
+
+		for {
+			newKeys, nextCursor, err := rdb.Scan(ctx, cursor, "agent:*", 1000).Result()
+			if err != nil {
+				json.Unmarshal([]byte(`{"message":"` + err.Error() + `"}`), &msg)
+				c.Data["json"] = msg
+				c.ServeJSON()
+				return
+			}
+
+			keys = append(keys, newKeys...)
+			cursor = nextCursor
+
+			if cursor == 0 {
+				break
+			}
+		}
+
+		if !contains(keys, agentID) {
+			break // found a unique ID
+		}
+	}
+	agentKey := "agent:" + agentID
+	hashKey := "agent_index:" + hashPasswordSHA256(agentID)
+	_, err = rdb.HSet(ctx, agentKey, map[string]string{"filler":"filler"}).Result()
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() + `"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	rdb.Set(ctx, hashKey, agentKey, 0)
+	json.Unmarshal([]byte(`{"message":` +`"`+ agentID+`"}`), &msg)
+	c.Data["json"] = msg
+	c.ServeJSON()
+}
+
+func contains(slice []string, str string) bool {
+    for _, s := range slice {
+        if s == str {
+            return true
+        }
+    }
+    return false
+}
+
+
 
 
 
 // list agents
 func (c *APIController) Agents() {
-	var msg Message
 	var token = c.Ctx.Input.Header("Authorization")
-	err := Verify_JWT(token)
-	if err != nil {
-		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
-		c.Data["json"] = msg
+	if err := VerifyAdmin(token); err != nil {
+		c.Data["json"] = Message{Message: err.Error()}
 		c.ServeJSON()
 		return
 	}
+
 	agents, err := ScanAgents()
 	if err != nil {
-		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
-		c.Data["json"] = msg
+		c.Data["json"] = Message{Message: err.Error()}
 		c.ServeJSON()
 		return
 	}
-	err = json.Unmarshal(agents, &msg)
-	if err != nil {
-		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
-		c.Data["json"] = msg
-		c.ServeJSON()
-		return
-	}
-	c.Data["json"] = msg
-	c.ServeJSON()
 
+	// Wrap the list of agents into your Message struct
+	c.Data["json"] = Message{Message: agents}
+	c.ServeJSON()
 }
+
 
 type Agent struct {
 	Agent_id string `json:"agent"`
@@ -159,7 +265,7 @@ type AgentID struct {
 func (c *APIController) Del_Agent() {
 	var msg Message
 	var token = c.Ctx.Input.Header("Authorization")
-	err := Verify_JWT(token)
+	err := VerifyAdmin(token)
 	if err != nil {
 		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
 		c.Data["json"] = msg
@@ -191,7 +297,7 @@ func (c *APIController) Del_Agent() {
 func (c *APIController) RunCommand() {
 	var msg Message
 	var token = c.Ctx.Input.Header("Authorization")
-	err := Verify_JWT(token)
+	err := VerifyAdmin(token)
 	if err != nil {
 		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
 		c.Data["json"] = msg
@@ -223,6 +329,7 @@ func AddCommand(command, dir, agentID string) (err error) {
 	}
 	data["command"] = command
 	data["dir"] = dir
+	data["cmdID"] = uuid.NewString()
 	data["history"] = data["history"] + "," + base64.StdEncoding.EncodeToString([]byte(command))
 	_, err = rdb.HSet(ctx, agentID, data).Result()
 	if err != nil {
@@ -288,40 +395,53 @@ func AuthUser(username, password string) bool {
     return storedHash == hashPasswordSHA256(password)
 }
 
-func AuthAgent(agent_id string) bool {
-	storedHash, err := rdb.Get(ctx, "agent:"+agent_id).Result()
-	if err == redis.Nil {
-        // User does not exist
+func AuthAgent(hashedAgentID string) bool {
+    // Step 1: Look up the real agent key from the hash
+    agentKey, err := rdb.Get(ctx, "agent_index:"+hashedAgentID).Result()
+    if err == redis.Nil {
+        // Index doesn't exist
         return false
     } else if err != nil {
         // Redis error
-        // Optionally log err here
         return false
     }
-	return storedHash == hashPasswordSHA256(agent_id)
+
+    // Step 2: Get the original UUID (agent ID) from the key
+    originalID := agentKey[len("agent:"):] // strip "agent:" prefix
+
+    // Step 3: Compare hash
+    expectedHash := hashPasswordSHA256(originalID)
+    return expectedHash == hashedAgentID
 }
+
+
 func Del(agent_id string) (err error){
 	_, err = rdb.Del(ctx, "agent:"+agent_id).Result()
+	if err != nil {
+		return err
+	}
+	_, err = rdb.Del(ctx, "agent_index:" + hashPasswordSHA256(agent_id)).Result()
 	return err
 }
 
 
-func ScanAgents() ([]byte, error) {
-	var cursor uint64
-    var keys []string
+func ScanAgents() ([]string, error) {
+	var (
+		cursor uint64
+		keys   []string
+	)
+
 	for {
-        newKeys, nextCursor, err := rdb.Scan(ctx, cursor, "agent:*", 1000).Result()
-        if err != nil {
-            return nil, err
-        }
+		newKeys, nextCursor, err := rdb.Scan(ctx, cursor, "agent:*", 1000).Result()
+		if err != nil {
+			return nil, fmt.Errorf("error scanning Redis: %w", err)
+		}
+		keys = append(keys, newKeys...)
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
 
-        keys = append(keys, newKeys...)
-        cursor = nextCursor
-
-        if cursor == 0 {
-            break
-        }
-    }
-
-    return json.Marshal(keys)
+	return keys, nil
 }
