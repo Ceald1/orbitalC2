@@ -4,6 +4,7 @@
 *.swp
 *.swo
 beego.iml
+.git.bak
 
 _beeTmp/
 _beeTmp2/
