@@ -15,6 +15,7 @@ func init() {
 	// agent get command
 	beego.Router("/agent/:id/plan", &controllers.AgentController{}, "get:GetCommand")
 	// send output of command
+	beego.Router("/agent/:id/result", &controllers.AgentController{}, "post:Result")
 
 
 	// Database endpoints

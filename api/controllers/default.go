@@ -74,6 +74,11 @@ func (c *AgentController) Register() {
 	c.ServeJSON()
 }
 
+func (c *AgentController) Result() {
+	// get command result
+}
+
+
 func (c *AgentController) GetCommand() {
 	var agentID = c.Ctx.Input.Param(":id")
 	var msg Message
