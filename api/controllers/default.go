@@ -74,9 +74,64 @@ func (c *AgentController) Register() {
 	c.ServeJSON()
 }
 
+type CMDResult struct {
+	// result should be base64 encoded for less server side code.
+	Result string `json:"result"`
+}
+
 func (c *AgentController) Result() {
 	// get command result
+	var agentID = c.Ctx.Input.Param(":id")
+	valid := AuthAgent(agentID)
+	var msg Message
+	if !valid {
+
+		c.Data["json"] = map[string]int{"message": 404}
+		c.ServeJSON()
+		return
+	}
+	var token = c.Ctx.Input.Header("Authorization")
+	var secret = []byte(os.Getenv("secret"))
+	userID, err := TokenDecode(token, secret)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	if userID != agentID {
+		json.Unmarshal([]byte(`{"message":403}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	var Result CMDResult
+	if err := c.Ctx.BindJSON(&Result); err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+	// check if valid base64
+	_, valid_b64 := base64.StdEncoding.DecodeString(Result.Result)
+	if valid_b64 != nil {
+		c.Ctx.WriteString(valid_b64.Error())
+		return
+	}
+	data, err := rdb.HGetAll(ctx, agentID).Result()
+	if err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+	data["result"] = Result.Result
+	_, err = rdb.HSet(ctx, agentID, data).Result()
+	if err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+
+	// return result
+	c.Data["json"] = map[string]interface{}{"message": 200}
 }
+
 
 
 func (c *AgentController) GetCommand() {
@@ -84,7 +139,6 @@ func (c *AgentController) GetCommand() {
 	var msg Message
 	valid := AuthAgent(agentID)
 	if !valid {
-
 		c.Data["json"] = map[string]int{"message": 404}
 		c.ServeJSON()
 		return
@@ -335,6 +389,7 @@ func AddCommand(command, dir, agentID string) (err error) {
 	data["command"] = command
 	data["dir"] = dir
 	data["cmdID"] = uuid.NewString()
+	data["result"] = "none"
 	data["history"] = data["history"] + "," + base64.StdEncoding.EncodeToString([]byte(command))
 	_, err = rdb.HSet(ctx, agentID, data).Result()
 	if err != nil {
