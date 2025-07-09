@@ -398,6 +398,48 @@ func AddCommand(command, dir, agentID string) (err error) {
 	return
 }
 
+type AgentResponseCommand struct {
+	AgentID string `json:"id"`
+}
+
+func (c *APIController) GetOutput() {
+	var msg Message
+	var token = c.Ctx.Input.Header("Authorization")
+	err := VerifyAdmin(token)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	var agent AgentResponseCommand
+	if err := c.Ctx.BindJSON(&agent); err != nil {
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+	agent_id := agent.AgentID
+	cmdOutput, err := Get_commandOutput(agent_id)
+	if err != nil {
+		json.Unmarshal([]byte(`{"message":"` + err.Error() +`"}`), &msg)
+		c.Data["json"] = msg
+		c.ServeJSON()
+		return
+	}
+	c.Data["json"] = map[string]string{"message": cmdOutput}
+	c.ServeJSON()
+
+} 
+
+func Get_commandOutput(agent_id string) (output string, err error) {
+	agentData, err := rdb.HGetAll(ctx, "agent:" + agent_id).Result()
+	if err != nil {
+		return
+	}
+	output = agentData["result"]
+	return
+}
+
+
 
 type LoginInput struct {
 	Username string `json:"username"`

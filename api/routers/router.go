@@ -28,5 +28,6 @@ func init() {
 	// C2 endpoints
 	beego.Router("/c2/command/send", &controllers.APIController{}, "post:RunCommand")
 	// get command result
+	beego.Router("c2/command/result", &controllers.APIController{}, "post:GetOutput")
 
 }
