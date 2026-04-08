@@ -6,6 +6,7 @@ import (
 
 	"github.com/Ceald1/orbitalC2/api/db"
 	_ "github.com/Ceald1/orbitalC2/api/docs"
+	orbitalRoutes "github.com/Ceald1/orbitalC2/api/routes"
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -21,7 +22,8 @@ func main() {
 			log.Fatal("Error loading .env file") // load .env file if not found as env var
 		}
 	}
-	DBConn, err := db.BootStrapDB(os.Getenv("SURREAL_HOSTURL"))
+	surrealHost := os.Getenv("SURREAL_HOSTURL")
+	DBConn, err := db.BootStrapDB(surrealHost)
 	if err != nil {
 		log.Fatalf("failed to connect to database! %v", err)
 	}
@@ -41,6 +43,10 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
+	})
+	userGroup := v1.Group("/user")
+	userGroup.POST("/login", func(ctx *gin.Context) {
+		orbitalRoutes.APIUserLogin(ctx, surrealHost)
 	})
 
 	log.Info("swagger UI on /swagger/index.html")

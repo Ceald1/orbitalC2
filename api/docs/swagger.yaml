@@ -1,4 +1,47 @@
+definitions:
+  routes.TokenResponse:
+    properties:
+      token:
+        example: eyJhbGci...
+        type: string
+    type: object
+  routes.UserLogin:
+    properties:
+      name:
+        example: test
+        type: string
+      password:
+        example: test
+        type: string
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /api/v1/user/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.TokenResponse'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login for API access
+      tags:
+      - user
 swagger: "2.0"

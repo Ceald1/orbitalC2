@@ -106,6 +106,30 @@ DEFINE TABLE IF NOT EXISTS agent SCHEMAFULL
 
 }
 
+func UserLogin(surrealHost, username, password string) (conn *SURREALCONN, err error) {
+	Sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	authData := &surrealdb.Auth{
+		Username: username,
+		Password: password,
+	}
+	token, err := Sdb.SignIn(ctx, authData)
+	if err != nil {
+		return
+	}
+	err = Sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	conn = &SURREALCONN{
+		Conn:  Sdb,
+		Token: token,
+	}
+	return
+}
+
 func RandomSecret() string {
 	const charset = LowerLetters + UpperLetters + Digits + Symbols
 	length := 20
