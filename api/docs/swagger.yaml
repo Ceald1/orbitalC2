@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   routes.TokenResponse:
     properties:
@@ -14,9 +15,43 @@ definitions:
         example: test
         type: string
     type: object
+host: localhost:8080
 info:
   contact: {}
+  description: A sample API
+  title: orbitalC2 api
+  version: "1.0"
 paths:
+  /api/v1/agent/create/{name}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new C2 agent
+      tags:
+      - agent user
   /api/v1/user/login:
     post:
       consumes:
@@ -44,4 +79,9 @@ paths:
       summary: User login for API access
       tags:
       - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

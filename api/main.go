@@ -1,3 +1,12 @@
+// @title           orbitalC2 api
+// @version         1.0
+// @description     A sample API
+// @host            localhost:8080
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 package main
 
 import (
@@ -47,6 +56,10 @@ func main() {
 	userGroup := v1.Group("/user")
 	userGroup.POST("/login", func(ctx *gin.Context) {
 		orbitalRoutes.APIUserLogin(ctx, surrealHost)
+	})
+	agentGroup := v1.Group("/agent")
+	agentGroup.GET("/create/:name", func(ctx *gin.Context) {
+		orbitalRoutes.CreateAgent(ctx, surrealHost)
 	})
 
 	log.Info("swagger UI on /swagger/index.html")

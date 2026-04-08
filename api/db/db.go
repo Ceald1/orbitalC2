@@ -29,7 +29,7 @@ const (
 	Digits = "0123456789"
 
 	// Symbols is the list of symbols.
-	Symbols = "~!@#$%^&*()_+`-={}|[]\\:\"<>?,./"
+	//Symbols = "~!@#$%^&*()_+`-={}|[]\\:\"<>?,./"
 )
 
 type SURREALCONN struct {
@@ -66,44 +66,79 @@ func BootStrapDB(surrealHost string) (conn *SURREALCONN, err error) {
 		Token: token,
 	}
 
-	// define scopes
-	Sdb.Use(ctx, `Agents`, `Agents`)
+	if err = Sdb.Use(ctx, `Agents`, `Agents`); err != nil {
+		return
+	}
+
 	scope := `
-DEFINE ACCESS agent_scope ON DATABASE TYPE RECORD
-  SIGNUP (
+DEFINE ACCESS OVERWRITE agent_scope ON DATABASE TYPE RECORD
+  SIGNUP {
+    -- 1. IF $auth.id HAS A VALUE, THEY ARE LOGGED IN AS AN AGENT
+    IF ($auth.id != NONE) {
+      THROW "Security Error: Existing agents cannot create new agents."
+    };
+
+    -- 2. Prevent duplicate names
+    IF (SELECT id FROM agent WHERE name = $user) {
+      THROW "agent already exists"
+    };
+
+    -- 3. Only guests or system admins can reach this
     CREATE agent SET
       name = $user,
-      password = crypto::argon2::generate($pass),
-      command = $command
-  )
-  SIGNIN (
+      password = crypto::argon2::generate($pass)
+  }
+  SIGNIN {
     SELECT * FROM agent
     WHERE name = $user
-      AND crypto::argon2::compare(password, $pass)
-  )
+    AND crypto::argon2::compare(password, $pass)
+    LIMIT 1
+  }
   DURATION FOR SESSION 1d;
-`
+	`
+
 	tablePerms := `
-DEFINE TABLE IF NOT EXISTS agent SCHEMAFULL
+DEFINE TABLE OVERWRITE agent SCHEMAFULL
   PERMISSIONS
     FOR select WHERE id = $auth.id,
+    FOR create NONE,
     FOR update NONE,
-    FOR delete NONE,
-    FOR create NONE;
-	`
+    FOR delete NONE;
+`
+	fields := `
+DEFINE FIELD name ON TABLE agent TYPE string;
+DEFINE FIELD password ON TABLE agent TYPE string;
+DEFINE FIELD command ON TABLE agent TYPE option<string>;
+`
+
 	_, err = surrealdb.Query[any](ctx, Sdb, scope, map[string]any{})
 	if err != nil {
 		if strings.Contains(err.Error(), "exists") {
 			err = nil
-
 		} else {
 			return
 		}
 	}
+
 	_, err = surrealdb.Query[any](ctx, Sdb, tablePerms, map[string]any{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exists") {
+			err = nil
+		} else {
+			return
+		}
+	}
+
+	_, err = surrealdb.Query[any](ctx, Sdb, fields, map[string]any{})
+	if err != nil {
+		if strings.Contains(err.Error(), "exists") {
+			err = nil
+		} else {
+			return
+		}
+	}
 
 	return
-
 }
 
 func UserLogin(surrealHost, username, password string) (conn *SURREALCONN, err error) {
@@ -131,7 +166,7 @@ func UserLogin(surrealHost, username, password string) (conn *SURREALCONN, err e
 }
 
 func RandomSecret() string {
-	const charset = LowerLetters + UpperLetters + Digits + Symbols
+	const charset = LowerLetters + UpperLetters + Digits // + Symbols
 	length := 20
 	password := make([]byte, length)
 	for i := range password {
@@ -144,19 +179,52 @@ func RandomSecret() string {
 	return string(password)
 }
 
-// add and create a record user for the new user into the Agents namespace and database
-func CreateAgent(conn *SURREALCONN, agentName string) (passwd string, err error) {
-	sdb := conn.Conn
-	passwd = RandomSecret()
+// add and create a record user for the new user into the Agents namespace and database, returns the token
+func CreateAgent(surrealHost, agentName, intoken string) (token string, err error) {
+	// fresh unauthenticated connection for signup
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	passwd := RandomSecret()
 	if passwd == "" {
 		return passwd, fmt.Errorf("Cannot create password")
 	}
-	err = sdb.Use(ctx, `Agents`, `Agents`)
-	auth_data := &surrealdb.Auth{
-		Username: agentName,
-		Password: passwd,
-		Access:   "agent_scope",
+
+	err = sdb.Authenticate(ctx, intoken)
+	if err != nil {
+		return
 	}
-	_, err = sdb.SignUp(ctx, &auth_data)
+	token, err = sdb.SignUp(ctx, &surrealdb.Auth{
+		Namespace: "Agents",
+		Database:  "Agents",
+		Access:    "agent_scope",
+		Username:  agentName,
+		Password:  passwd,
+	})
+	//token, err = sdb.SignUp(ctx, map[string]any{
+	//	"NS":      "Agents",
+	//	"DB":      "Agents",
+	//	"AC":      "agent_scope",
+	//	"user":    agentName,
+	//	"pass":    passwd,
+	//	"command": "", // optional, omit if not needed
+	//	"id":      models.NewRecordID("agent", agentName),
+	//})
+	return
+}
+
+func TokenCheck(surrealHost, token string) (conn *SURREALCONN, err error) {
+	Sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = Sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	conn = &SURREALCONN{}
+	conn.Conn = Sdb
+	conn.Token = token
 	return
 }
