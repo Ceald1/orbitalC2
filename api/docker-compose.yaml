@@ -1,0 +1,41 @@
+services:
+  init-data:
+    image: busybox
+    command: chmod -R 777 /data
+    volumes:
+      - ./data:/data
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: surrealdb
+    restart: always
+    command: start --user ${SURREAL_ADMIN} --pass ${SURREAL_PASS} rocksdb://data/database.db
+    ports:
+      - 127.0.0.1:8000:8000
+    volumes:
+      - ./data:/data
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
+    networks:
+      - orbital-internal
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+      memlock:
+        soft: -1
+        hard: -1
+
+networks:
+  orbital-internal:
+    driver: bridge
+    name: "orbital-internal"
+    driver_opts:
+      com.docker.network.bridge.name: orbital0
+      com.docker.network.driver.mtu: 1500
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+

@@ -1,14 +1,50 @@
 package main
 
 import (
-	_ "api/routers"
-	beego "github.com/beego/beego/v2/server/web"
+	"net/http"
+	"os"
+
+	"github.com/Ceald1/orbitalC2/api/db"
+	_ "github.com/Ceald1/orbitalC2/api/docs"
+	"github.com/charmbracelet/log"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-
-
 func main() {
+	// get DB connection
+	if os.Getenv("SURREAL_HOSTURL") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file") // load .env file if not found as env var
+		}
+	}
+	DBConn, err := db.BootStrapDB(os.Getenv("SURREAL_HOSTURL"))
+	if err != nil {
+		log.Fatalf("failed to connect to database! %v", err)
+	}
+	if DBConn != nil { // piss off errors about not being used
+		log.Info("Database initialized")
+		DBConn = nil // destroy after creation
+	}
 
-	beego.Run()
+	r := gin.Default()
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.Any("/", func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
+
+	v1 := r.Group("/api/v1")
+	v1.GET("/ping", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
+
+	log.Info("swagger UI on /swagger/index.html")
+	if err := r.Run(); err != nil {
+		log.Fatalf("failed to run server: %v", err)
+	}
 }
-
