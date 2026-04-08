@@ -195,6 +195,11 @@ func CreateAgent(surrealHost, agentName, intoken string) (token string, err erro
 	if err != nil {
 		return
 	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+
+	}
 	token, err = sdb.SignUp(ctx, &surrealdb.Auth{
 		Namespace: "Agents",
 		Database:  "Agents",
@@ -202,29 +207,39 @@ func CreateAgent(surrealHost, agentName, intoken string) (token string, err erro
 		Username:  agentName,
 		Password:  passwd,
 	})
-	//token, err = sdb.SignUp(ctx, map[string]any{
-	//	"NS":      "Agents",
-	//	"DB":      "Agents",
-	//	"AC":      "agent_scope",
-	//	"user":    agentName,
-	//	"pass":    passwd,
-	//	"command": "", // optional, omit if not needed
-	//	"id":      models.NewRecordID("agent", agentName),
-	//})
+
 	return
 }
 
-func TokenCheck(surrealHost, token string) (conn *SURREALCONN, err error) {
-	Sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+func TokenCheck(sdb *surrealdb.DB) (err error) {
+	err = sdb.Use(ctx, `Agents`, `Agents`)
 	if err != nil {
-		return
+		return err
 	}
-	err = Sdb.Authenticate(ctx, token)
+	query := `RETURN $access == "agent_scope";`
+	res, err := surrealdb.Query[bool](ctx, sdb, query, map[string]any{})
 	if err != nil {
-		return
+		return err
 	}
-	conn = &SURREALCONN{}
-	conn.Conn = Sdb
-	conn.Token = token
-	return
+	for _, qr := range *res {
+		if qr.Result == true {
+			return fmt.Errorf("unauthorized for creating new agents")
+		}
+	}
+	return nil
 }
+
+//func TokenCheck(surrealHost, token string) (conn *SURREALCONN, err error) {
+//	Sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+//	if err != nil {
+//		return
+//	}
+//	err = Sdb.Authenticate(ctx, token)
+//	if err != nil {
+//		return
+//	}
+//	conn = &SURREALCONN{}
+//	conn.Conn = Sdb
+//	conn.Token = token
+//	return
+//}
