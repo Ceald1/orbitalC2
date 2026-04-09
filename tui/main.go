@@ -13,4 +13,24 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Info(token)
+MAINMENU:
+
+	option := forms.MainMenu()
+	switch option {
+	case "exit":
+		log.Fatal("quitting..")
+	case "config":
+		user, password, url := forms.NewToken()
+		token, err = req.GetToken(user, password, url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		goto MAINMENU
+	case "createAgent":
+		goto MAINMENU
+	case "deleteAgent":
+		goto MAINMENU
+	case "agents":
+		goto MAINMENU
+	}
 }

@@ -25,6 +25,7 @@ var (
 	// Accents (warm tones from figure/light)
 	AccentSoft = lipgloss.Color("#C58D84")
 	AccentDark = lipgloss.Color("#785759")
+	Highlight  = lipgloss.Color("#F8D0CC")
 
 	// Neutral UI elements (borders, separators)
 	Border    = lipgloss.Color("#5A5C5A")
@@ -67,7 +68,7 @@ func (c *CustomTheme) Theme(isDark bool) *huh.Styles {
 	foreground := TextPrimary
 	comment := TextMuted
 	selection := AccentSoft
-	highlight := AccentSoft
+	highlight := Highlight //AccentSoft
 	errorColor := AccentDark
 	focus := Focus
 
@@ -80,12 +81,12 @@ func (c *CustomTheme) Theme(isDark bool) *huh.Styles {
 	t.Focused.Directory = t.Focused.Directory.Foreground(highlight)
 	t.Focused.File = t.Focused.File.Foreground(foreground)
 	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(errorColor)
-	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(selection)
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(highlight)
 	t.Focused.NextIndicator = t.Focused.NextIndicator.Foreground(selection)
 	t.Focused.PrevIndicator = t.Focused.PrevIndicator.Foreground(selection)
 	t.Focused.Option = t.Focused.Option.Foreground(foreground)
 	t.Focused.MultiSelectSelector = t.Focused.MultiSelectSelector.Foreground(selection)
-	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(focus)
+	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(highlight)
 	t.Focused.SelectedPrefix = t.Focused.SelectedPrefix.Foreground(focus)
 	t.Focused.UnselectedOption = t.Focused.UnselectedOption.Foreground(foreground)
 	t.Focused.UnselectedPrefix = t.Focused.UnselectedPrefix.Foreground(comment)

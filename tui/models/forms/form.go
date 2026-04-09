@@ -1,6 +1,8 @@
 package forms
 
 import (
+	"fmt"
+
 	"charm.land/huh/v2"
 	"github.com/Ceald1/orbitalC2/tui/styles"
 )
@@ -22,7 +24,24 @@ func NewToken() (username, password, APIHost string) {
 		),
 	)
 	form.WithTheme(theme)
+	fmt.Print("\033[H\033[2J")
 	form.Run()
 	return
 
+}
+
+func MainMenu() (option string) {
+	fmt.Print("\033[H\033[2J")
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().Options(
+				huh.NewOption("Config API", "config"),
+				huh.NewOption("Create Agent", "createAgent"),
+				huh.NewOption("Delete Agent", "deleteAgent"),
+				huh.NewOption("Agents", "agents"),
+				huh.NewOption("exit", "exit"),
+			).Value(&option),
+		).Title("Main Menu"),
+	).WithTheme(new(styles.CustomTheme)).Run()
+	return option
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	surrealdb "github.com/surrealdb/surrealdb.go"
 
@@ -42,6 +43,15 @@ type Agent struct {
 	Name     string           `json:"name"`
 	Password string           `json:"password"`
 	Command  string           `json:"command,omitempty"`
+}
+
+type AgentBeacon struct { // linked to Agent record (CAN be modified)
+	ID *models.RecordID `json:"id,omitempty"`
+
+	Name          string                 `json:"name"`
+	OS            string                 `json:"os"`
+	CommandResult string                 `json:"cmd_result,omitempty"`
+	LastChecked   *models.CustomDateTime `json:"checked"`
 }
 
 func BootStrapDB(surrealHost string) (conn *SURREALCONN, err error) {
@@ -94,7 +104,7 @@ DEFINE ACCESS OVERWRITE agent_scope ON DATABASE TYPE RECORD
     AND crypto::argon2::compare(password, $pass)
     LIMIT 1
   }
-  DURATION FOR SESSION 1d;
+  DURATION FOR SESSION 100d;
 	`
 
 	tablePerms := `
@@ -102,9 +112,23 @@ DEFINE TABLE OVERWRITE agent SCHEMAFULL
   PERMISSIONS
     FOR select WHERE id = $auth.id,
     FOR create NONE,
-    FOR update WHERE id = $auth.id,
+    FOR update NONE,
     FOR delete NONE;
 `
+	agentBeaconPerms := `
+DEFINE TABLE OVERWRITE agentBeacons SCHEMAFULL
+	PERMISSIONS
+		FOR select WHERE id = $auth.id,
+		FOR create NONE,
+		FOR update WHERE id = $auth.id,
+		FOR delete NONE;
+	`
+	agentBeaconFields := `
+DEFINE FIELD name ON TABLE agentBeacons TYPE string;
+DEFINE FIELD os ON TABLE agentBeacons TYPE string;
+DEFINE FIELD cmd_result ON TABLE agentBeacons TYPE option<string>;
+DEFINE FIELD checked ON TABLE agentBeacons TYPE datetime;
+	`
 	fields := `
 DEFINE FIELD name ON TABLE agent TYPE string;
 DEFINE FIELD password ON TABLE agent TYPE string;
@@ -137,7 +161,25 @@ DEFINE FIELD command ON TABLE agent TYPE option<string>;
 			return
 		}
 	}
+	_, err = surrealdb.Query[any](ctx, Sdb, agentBeaconPerms, map[string]any{})
 
+	if err != nil {
+		if strings.Contains(err.Error(), "exists") {
+			err = nil
+		} else {
+			return
+		}
+	}
+
+	_, err = surrealdb.Query[any](ctx, Sdb, agentBeaconFields, map[string]any{})
+
+	if err != nil {
+		if strings.Contains(err.Error(), "exists") {
+			err = nil
+		} else {
+			return
+		}
+	}
 	return
 }
 
@@ -274,5 +316,62 @@ func DeleteTable(surrealHost, token string) (err error) {
 		return
 	}
 	_, err = BootStrapDB(surrealHost)
+	return
+}
+
+// for agent check ins and heartbeats
+func CheckIn(surrealHost, token, os, cmd_result string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	queryCheck := `SELECT * FROM agentBeacons WHERE id = $auth.id`
+	results, err := surrealdb.Query[[]AgentBeacon](ctx, sdb, queryCheck, map[string]any{})
+	if err != nil {
+		return
+	}
+	var agent AgentBeacon = AgentBeacon{}
+	for _, qr := range *results {
+		for _, r := range qr.Result {
+			agent = r
+		}
+	}
+	// First time checking in
+	if agent.Name == "" {
+		query := fmt.Sprintf(`
+INSERT INTO agentBeacons SET
+		name = $auth.name
+		os = '%s'
+		cmd_result = '',
+		checked = time::now();`, os)
+		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+		if err != nil {
+			return
+		}
+		// link record
+		query = `
+LET $agent = (SELECT id FROM agent WHERE id = $auth.id);
+LET $beacon = (SELECT id FROM agentBeacons WHERE name = $auth.name);
+RELATE $agent[0].id->Beacon->$beacon[0].id;`
+		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+		if err != nil {
+			return
+		}
+	} else {
+		t := models.CustomDateTime{Time: time.Now()}
+		_, err = surrealdb.Update[AgentBeacon](ctx, sdb, *agent.ID, AgentBeacon{
+			CommandResult: cmd_result,
+			LastChecked:   &t,
+		})
+	}
+
 	return
 }
