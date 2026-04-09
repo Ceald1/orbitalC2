@@ -2,5 +2,4 @@
 
 
 ## API Outline
-API uses redis as database, needs jwt auth to secure admin functions in AP. 
-Clients authenticate the same way as mothership with hash digest and checked against plaintext in DB
+API uses SurrealDB for the database and ACID compliance (yes I know very overkill) and allows for note taking on agents connected to the C2 from the TUI. 
