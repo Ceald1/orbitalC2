@@ -117,7 +117,7 @@ paths:
       - BearerAuth: []
       summary: list agents
       tags:
-      - agent
+      - user
   /api/v1/user/login:
     post:
       consumes:

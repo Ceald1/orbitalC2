@@ -124,7 +124,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "agent"
+                    "user"
                 ],
                 "summary": "list agents",
                 "responses": {

@@ -134,7 +134,7 @@ type AgentParsed struct {
 
 // ListAgents
 // @Summary list agents
-// @Tags agent
+// @Tags user
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]AgentParsed
