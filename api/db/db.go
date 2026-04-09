@@ -104,7 +104,7 @@ DEFINE ACCESS OVERWRITE agent_scope ON DATABASE TYPE RECORD
     AND crypto::argon2::compare(password, $pass)
     LIMIT 1
   }
-  DURATION FOR SESSION 100d;
+  DURATION FOR SESSION 365d;
 	`
 
 	tablePerms := `
@@ -117,11 +117,11 @@ DEFINE TABLE OVERWRITE agent SCHEMAFULL
 `
 	agentBeaconPerms := `
 DEFINE TABLE OVERWRITE agentBeacons SCHEMAFULL
-	PERMISSIONS
-		FOR select WHERE id = $auth.id,
-		FOR create WHERE id = $auth.id,
-		FOR update WHERE id = $auth.id,
-		FOR delete NONE;
+    PERMISSIONS
+        FOR select WHERE record::id(id) = record::id($auth.id),
+        FOR create WHERE record::id(id) = record::id($auth.id),
+        FOR update WHERE record::id(id) = record::id($auth.id),
+        FOR delete NONE;
 	`
 	agentBeaconFields := `
 DEFINE FIELD name ON TABLE agentBeacons TYPE string;
@@ -346,21 +346,32 @@ func CheckIn(surrealHost, token, os, cmd_result string) (err error) {
 	}
 	// First time checking in
 	if agent.Name == "" {
+		//		query := fmt.Sprintf(`
+		//CREATE agentBeacons SET
+		//		name = $auth.name,
+		//		os = '%s',
+		//		cmd_result = '',
+		//		checked = time::now();`, os)
+		//		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+		//		if err != nil {
+		//			return
+		//		}
+		//		// link record
+		//		query = `
+		//LET $agent = (SELECT id FROM agent WHERE id = $auth.id)[0];
+		//LET $beacon = (SELECT id FROM agentBeacons WHERE name = $auth.name)[0];
+		//RELATE $agent->Beacon->$beacon;`
+		//		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
 		query := fmt.Sprintf(`
-INSERT INTO agentBeacons SET
-		name = $auth.name
-		os = '%s'
-		cmd_result = '',
-		checked = time::now();`, os)
-		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
-		if err != nil {
-			return
-		}
-		// link record
-		query = `
-LET $agent = (SELECT id FROM agent WHERE id = $auth.id);
-LET $beacon = (SELECT id FROM agentBeacons WHERE name = $auth.name);
-RELATE $agent[0].id->Beacon->$beacon[0].id;`
+LET $agentId = $auth.id;
+LET $beaconId = type::record("agentBeacons", record::id($auth.id));
+CREATE $beaconId SET
+    name = $auth.name,
+    os = '%s',
+    cmd_result = NONE,
+    checked = time::now();
+RELATE $agentId->Beacon->$beaconId;`, os)
+
 		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
 		if err != nil {
 			return

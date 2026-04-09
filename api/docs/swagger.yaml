@@ -1,5 +1,10 @@
 basePath: /
 definitions:
+  routes.AgentCheckinData:
+    properties:
+      os:
+        type: string
+    type: object
   routes.AgentParsed:
     properties:
       checked:
@@ -35,6 +40,37 @@ info:
   title: orbitalC2 api
   version: "1.0"
 paths:
+  /api/v1/agent/agent/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.AgentCheckinData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Agent checkin
+      tags:
+      - agent
   /api/v1/agent/create/{name}:
     get:
       consumes:

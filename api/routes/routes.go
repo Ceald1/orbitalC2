@@ -169,3 +169,42 @@ func ListAgents(c *gin.Context, surrealHost string) {
 	}
 	c.JSON(200, gin.H{"result": agentsParsed})
 }
+
+type AgentCheckinData struct {
+	OS string `json:"os"`
+}
+
+// AgentCheckin
+// @Summary Agent checkin
+// @Tags agent
+// @Accept json
+// @Produce json
+// @Param body body AgentCheckinData true "Login credentials"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/agent/agent/login [post]
+func AgentCheckin(c *gin.Context, surrealHost string) {
+	var newUser AgentCheckinData
+	err := c.ShouldBindBodyWithJSON(&newUser)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	err = db.CheckIn(surrealHost, token, newUser.OS, "CHECKED IN")
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"result": "ok"})
+}

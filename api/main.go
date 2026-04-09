@@ -67,6 +67,10 @@ func main() {
 	agentGroup.GET("/list", func(ctx *gin.Context) {
 		orbitalRoutes.ListAgents(ctx, surrealHost)
 	})
+	agentAgentGroup := agentGroup.Group("/agent")
+	agentAgentGroup.POST("/login", func(ctx *gin.Context) {
+		orbitalRoutes.AgentCheckin(ctx, surrealHost)
+	})
 
 	log.Info("swagger UI on /swagger/index.html")
 	if err := r.Run(); err != nil {
