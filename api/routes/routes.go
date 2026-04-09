@@ -1,7 +1,6 @@
 package routes
 
 import (
-	//	"encoding/json"
 	"net/http"
 
 	"github.com/Ceald1/orbitalC2/api/db"
@@ -77,4 +76,41 @@ func CreateAgent(c *gin.Context, surrealHost string) {
 	}
 	c.JSON(200, gin.H{"result": passwd})
 
+}
+
+// DeleteAgents
+// @Summary Delete table
+// @Tags agent user
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Param name path string false "Agent Name"
+// @Router /api/v1/agent/delete/{name} [get]
+func DeleteAgents(c *gin.Context, surrealHost string) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	name := c.Param("name")
+	if name == "" { // delete all entries
+		err := db.DeleteTable(surrealHost, token)
+		if err != nil {
+			c.JSON(403, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	err := db.DeleteEntry(surrealHost, token, name)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"result": "ok"})
 }

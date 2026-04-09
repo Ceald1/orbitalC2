@@ -102,7 +102,7 @@ DEFINE TABLE OVERWRITE agent SCHEMAFULL
   PERMISSIONS
     FOR select WHERE id = $auth.id,
     FOR create NONE,
-    FOR update NONE,
+    FOR update WHERE id = $auth.id,
     FOR delete NONE;
 `
 	fields := `
@@ -216,7 +216,7 @@ func TokenCheck(sdb *surrealdb.DB) (err error) {
 	if err != nil {
 		return err
 	}
-	query := `RETURN $access == "agent_scope";`
+	query := `RETURN $access == "agent_scope" && $access != NONE;`
 	res, err := surrealdb.Query[bool](ctx, sdb, query, map[string]any{})
 	if err != nil {
 		return err
@@ -229,17 +229,50 @@ func TokenCheck(sdb *surrealdb.DB) (err error) {
 	return nil
 }
 
-//func TokenCheck(surrealHost, token string) (conn *SURREALCONN, err error) {
-//	Sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
-//	if err != nil {
-//		return
-//	}
-//	err = Sdb.Authenticate(ctx, token)
-//	if err != nil {
-//		return
-//	}
-//	conn = &SURREALCONN{}
-//	conn.Conn = Sdb
-//	conn.Token = token
-//	return
-//}
+func DeleteEntry(surrealHost, token, agentName string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	query := fmt.Sprintf(`DELETE agent WHERE name = "%s"`, agentName)
+	_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+	return
+}
+
+func DeleteTable(surrealHost, token string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	query := `REMOVE TABLE agent`
+	_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+	_, err = BootStrapDB(surrealHost)
+	return
+}

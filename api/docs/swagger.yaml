@@ -52,6 +52,35 @@ paths:
       summary: Create a new C2 agent
       tags:
       - agent user
+  /api/v1/agent/delete/{name}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete table
+      tags:
+      - agent user
   /api/v1/user/login:
     post:
       consumes:
