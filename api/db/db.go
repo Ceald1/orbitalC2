@@ -119,7 +119,7 @@ DEFINE TABLE OVERWRITE agent SCHEMAFULL
 DEFINE TABLE OVERWRITE agentBeacons SCHEMAFULL
 	PERMISSIONS
 		FOR select WHERE id = $auth.id,
-		FOR create NONE,
+		FOR create WHERE id = $auth.id,
 		FOR update WHERE id = $auth.id,
 		FOR delete NONE;
 	`
@@ -374,4 +374,30 @@ RELATE $agent[0].id->Beacon->$beacon[0].id;`
 	}
 
 	return
+}
+
+func ListAgents(surrealHost, token string) (agents []AgentBeacon, err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+
+	res, err := surrealdb.Select[[]AgentBeacon](ctx, sdb, models.Table("agentBeacons"))
+	if err != nil {
+		return
+	}
+	agents = *res
+	return agents, nil
 }

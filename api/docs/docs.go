@@ -110,6 +110,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/agent/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "list agents",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/routes.AgentParsed"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/login": {
             "post": {
                 "consumes": [
@@ -154,6 +190,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "routes.AgentParsed": {
+            "type": "object",
+            "properties": {
+                "checked": {
+                    "type": "string"
+                },
+                "cmd_result": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.TokenResponse": {
             "type": "object",
             "properties": {

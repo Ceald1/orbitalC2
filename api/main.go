@@ -64,6 +64,9 @@ func main() {
 	agentGroup.GET("/delete/:name", func(ctx *gin.Context) {
 		orbitalRoutes.DeleteAgents(ctx, surrealHost)
 	})
+	agentGroup.GET("/list", func(ctx *gin.Context) {
+		orbitalRoutes.ListAgents(ctx, surrealHost)
+	})
 
 	log.Info("swagger UI on /swagger/index.html")
 	if err := r.Run(); err != nil {

@@ -114,3 +114,58 @@ func DeleteAgents(c *gin.Context, surrealHost string) {
 
 	c.JSON(200, gin.H{"result": "ok"})
 }
+
+//type AgentBeacon struct { // linked to Agent record (CAN be modified)
+//	ID *models.RecordID `json:"id,omitempty"`
+//
+//	Name          string                 `json:"name"`
+//	OS            string                 `json:"os"`
+//	CommandResult string                 `json:"cmd_result,omitempty"`
+//	LastChecked   *models.CustomDateTime `json:"checked"`
+//}
+
+type AgentParsed struct {
+	ID            string `json:"id,omitempty"`
+	Name          string `json:"name"`
+	OS            string `json:"os"`
+	CommandResult string `json:"cmd_result,omitempty"`
+	LastChecked   string `json:"checked"`
+}
+
+// ListAgents
+// @Summary list agents
+// @Tags user agent
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]AgentParsed
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/agent/list [get]
+func ListAgents(c *gin.Context, surrealHost string) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	agents, err := db.ListAgents(surrealHost, token)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
+	agentsParsed := make([]AgentParsed, 0)
+	for _, agent := range agents {
+		agents_p := AgentParsed{
+			ID:            agent.ID.String(),
+			Name:          agent.Name,
+			OS:            agent.OS,
+			CommandResult: agent.CommandResult,
+			LastChecked:   agent.LastChecked.String(),
+		}
+		agentsParsed = append(agentsParsed, agents_p)
+	}
+	c.JSON(200, gin.H{"result": agentsParsed})
+}
