@@ -8,9 +8,9 @@ import (
 func NewToken() (username, password string) {
 	theme := new(styles.CustomTheme)
 	titleUser := "Enter Username"
-	promptUser := "Username >"
+	promptUser := "Username > "
 	titlePassword := "Enter Password"
-	promptPassword := "Password >"
+	promptPassword := "Password > "
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().Title(titleUser).Value(&username).Prompt(promptUser),

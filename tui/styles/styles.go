@@ -99,9 +99,16 @@ func (c *CustomTheme) Theme(isDark bool) *huh.Styles {
 	t.Blurred = t.Focused
 	t.Blurred.Base = t.Blurred.Base.BorderStyle(lipgloss.HiddenBorder())
 	t.Blurred.Card = t.Blurred.Base
-	t.Blurred.NextIndicator = lipgloss.NewStyle()
-	t.Blurred.PrevIndicator = lipgloss.NewStyle()
+	t.Blurred.NextIndicator = MutedStyle
+	t.Blurred.PrevIndicator = MutedStyle
 	t.Blurred.Title = t.Blurred.Title.Foreground(AccentDark).Bold(true).Padding(1, 1, 1, 1).Background(BgDark)
+	t.Blurred.TextInput.Prompt = MutedStyle
+	t.Blurred.TextInput.Text = MutedStyle
+	t.Help.Ellipsis = HighlightStyle
+	t.Help.ShortDesc = HighlightStyle
+	t.Help.FullKey = HighlightStyle
+	t.Help.ShortKey = HighlightStyle
+	// t.Help.Ellipsis.Margin = HighlightStyle
 
 	t.Group.Title = t.Focused.Title
 	t.Group.Description = t.Focused.Description
