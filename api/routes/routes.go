@@ -45,7 +45,7 @@ func APIUserLogin(ctx *gin.Context, surrealHost string) {
 
 // CreateAgent
 // @Summary Create a new C2 agent
-// @Tags agent user
+// @Tags user
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]string
@@ -80,7 +80,7 @@ func CreateAgent(c *gin.Context, surrealHost string) {
 
 // DeleteAgents
 // @Summary Delete table
-// @Tags agent user
+// @Tags user
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]string
@@ -134,7 +134,7 @@ type AgentParsed struct {
 
 // ListAgents
 // @Summary list agents
-// @Tags user agent
+// @Tags agent
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]AgentParsed

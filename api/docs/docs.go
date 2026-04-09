@@ -29,7 +29,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "agent user"
+                    "user"
                 ],
                 "summary": "Create a new C2 agent",
                 "parameters": [
@@ -77,7 +77,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "agent user"
+                    "user"
                 ],
                 "summary": "Delete table",
                 "parameters": [
@@ -122,6 +122,9 @@ const docTemplate = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "agent"
                 ],
                 "summary": "list agents",
                 "responses": {
