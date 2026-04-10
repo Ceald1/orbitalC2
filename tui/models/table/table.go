@@ -45,17 +45,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-		width = width - 3
+		width := msg.Width - 6 // use msg directly, subtract border
+		height := msg.Height
+
 		newColumns := make([]table.Column, 0)
+		colWidth := (width / 4) - 1
 		for _, column := range m.table.Columns() {
-			column_width := width - 1
-			column.Width = column_width / 4
+			column.Width = colWidth
 			newColumns = append(newColumns, column)
 		}
 		m.table.SetColumns(newColumns)
 		m.table.SetWidth(width)
 		m.table.SetHeight(height - 20)
+		//		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+		//		width = width - 3
+		//		newColumns := make([]table.Column, 0)
+		//		for _, column := range m.table.Columns() {
+		//			column_width := width - 1
+		//			column.Width = column_width / 4
+		//			newColumns = append(newColumns, column)
+		//		}
+		//		m.table.SetColumns(newColumns)
+		//		m.table.SetWidth(width)
+		//		m.table.SetHeight(height - 20)
 
 	}
 	m.table, cmd = m.table.Update(msg)
@@ -69,16 +81,26 @@ func (m Model) View() tea.View {
 func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 	fmt.Print("\033[H\033[2J")
 	width, height, err := term.GetSize(int(os.Stdin.Fd()))
-	width = width - 3
-	if err != nil {
-		return
-	}
+	width = width - 6 // match the -4 above
+	colWidth := (width / 4) - 1
+
 	columns := []table.Column{
-		{Title: "ID", Width: int(width/4) - 1},
-		{Title: "Name", Width: int(width/4) - 1},
-		{Title: "Last Checked", Width: int(width/4) - 1},
-		{Title: "OS", Width: int(width/4) - 1},
+		{Title: "ID", Width: colWidth},
+		{Title: "Name", Width: colWidth},
+		{Title: "Last Checked", Width: colWidth},
+		{Title: "OS", Width: colWidth},
 	}
+	//	width, height, err := term.GetSize(int(os.Stdin.Fd()))
+	//	width = width - 3
+	//	if err != nil {
+	//		return
+	//	}
+	//	columns := []table.Column{
+	//		{Title: "ID", Width: int(width/4) - 1},
+	//		{Title: "Name", Width: int(width/4) - 1},
+	//		{Title: "Last Checked", Width: int(width/4) - 1},
+	//		{Title: "OS", Width: int(width/4) - 1},
+	//	}
 	rows := make([]table.Row, 0)
 	for i, agent := range agents {
 		row := table.Row{
