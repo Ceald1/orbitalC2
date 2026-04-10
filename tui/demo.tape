@@ -24,3 +24,15 @@ Type "password123"
 Enter
 
 Sleep 2s
+
+Down
+Down
+Down
+
+Sleep 1s
+
+Enter
+
+Sleep 2s
+
+Enter

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Ceald1/orbitalC2/tui/models/forms"
+	"github.com/Ceald1/orbitalC2/tui/models/table"
 	"github.com/Ceald1/orbitalC2/tui/req"
 
 	"github.com/charmbracelet/log"
@@ -33,6 +34,18 @@ MAINMENU:
 	case "deleteAgent":
 		goto MAINMENU
 	case "agents":
-		goto MAINMENU
+		agents, err := req.GetAgents(url, token)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s, err := table.NewTable(agents)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if s == "" {
+			goto MAINMENU
+		} else {
+			log.Info(s)
+		}
 	}
 }
