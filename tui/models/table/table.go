@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	routes "github.com/Ceald1/orbitalC2/api/routes"
+	"github.com/Ceald1/orbitalC2/tui/models/help"
 	"github.com/Ceald1/orbitalC2/tui/styles"
 	"golang.org/x/term"
 	"os"
@@ -19,6 +20,7 @@ var Selected string
 
 type Model struct {
 	table table.Model
+	help  help.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -57,29 +59,43 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		height := msg.Height
 
 		newColumns := make([]table.Column, 0)
-		colWidth := (width / 4) - 1
+		colWidth := (width / 4) - 3
 		for _, column := range m.table.Columns() {
 			column.Width = colWidth
 			newColumns = append(newColumns, column)
 		}
 		m.table.SetColumns(newColumns)
 		m.table.SetWidth(width)
+		baseStyle.Width(m.table.Width())
 		m.table.SetHeight(height - 20)
 
 	}
+
+	helpModel, helpCmd := m.help.Update(msg)
+	m.help = helpModel.(help.Model)
 	m.table, cmd = m.table.Update(msg)
-	return m, cmd
+	return m, tea.Batch(cmd, helpCmd)
+	// m.table, cmd = m.table.Update(msg)
+	// return m, cmd
 }
 
 func (m Model) View() tea.View {
-	return tea.NewView(baseStyle.Render(m.table.View()) + "\n  " + m.table.HelpView() + "\n")
+	helpView := string(m.help.View().Content)
+	return tea.NewView(
+		baseStyle.Width(m.table.Width()).Render(m.table.View()) + "\n" + helpView,
+	)
 }
+
+//func (m Model) View() tea.View {
+//	return tea.NewView(baseStyle.Render(m.table.View()) + "\n  " + m.table.HelpView() + "\n")
+//}
 
 func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 	fmt.Print("\033[H\033[2J")
 	width, height, err := term.GetSize(int(os.Stdin.Fd()))
 	width = width - 6 // match the -4 above
-	colWidth := (width / 4) - 1
+	colWidth := (width / 4) - 3
+	baseStyle.MaxWidth(width)
 
 	columns := []table.Column{
 		{Title: "ID", Width: colWidth},
@@ -110,7 +126,7 @@ func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 		BorderForeground(styles.TextMuted).BorderBottom(true).Bold(true)
 	s.Selected = s.Selected.Foreground(styles.TextPrimary).Background(styles.Highlight).Bold(true)
 	t.SetStyles(s)
-	m := Model{t}
+	m := Model{table: t, help: help.NewModel()}
 	_, err = tea.NewProgram(m).Run()
 	return Selected, err
 
