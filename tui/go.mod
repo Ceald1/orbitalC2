@@ -9,6 +9,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.2
 	github.com/Ceald1/orbitalC2/api v0.0.0-20260410040840-8992dd272c6c
 	github.com/charmbracelet/log v1.0.0
+	golang.org/x/term v0.42.0
 )
 
 require (

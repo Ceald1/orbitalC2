@@ -8,6 +8,8 @@ import (
 	"charm.land/lipgloss/v2"
 	routes "github.com/Ceald1/orbitalC2/api/routes"
 	"github.com/Ceald1/orbitalC2/tui/styles"
+	"golang.org/x/term"
+	"os"
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -42,6 +44,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Selected = m.table.SelectedRow()[1] // agent name
 			return m, tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
+		m.table.SetWidth(width - 3)
+		m.table.SetHeight(height - 20)
 
 	}
 	m.table, cmd = m.table.Update(msg)
@@ -53,6 +59,7 @@ func (m Model) View() tea.View {
 }
 
 func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
+	fmt.Print("\033[H\033[2J")
 	columns := []table.Column{
 		{Title: "ID", Width: 4},
 		{Title: "Name", Width: 20},
@@ -69,11 +76,15 @@ func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 		}
 		rows = append(rows, row)
 	}
+	width, height, err := term.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
-		table.WithHeight(10),
-		table.WithWidth(60),
+		table.WithHeight(height-20),
+		table.WithWidth(width-3),
 	)
 	s := table.DefaultStyles()
 	s.Header = s.Header.BorderStyle(lipgloss.NormalBorder()).
