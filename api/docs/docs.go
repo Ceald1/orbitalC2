@@ -238,6 +238,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/notes/{name}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent notes"
+                ],
+                "summary": "List notes on an agent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/routes.Note"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/login": {
             "post": {
                 "consumes": [
@@ -309,6 +360,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "os": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.Note": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }

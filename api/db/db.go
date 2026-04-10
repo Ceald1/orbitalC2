@@ -38,6 +38,13 @@ type SURREALCONN struct {
 	Conn  *surrealdb.DB
 }
 
+type Note struct {
+	ID          *models.RecordID `json:"id,omitempty"`
+	Name        string           `json:"name"`
+	Content     string           `json:"content,omitempty"`
+	LinkedAgent string           `json:"linkedAgent"`
+}
+
 type Agent struct {
 	ID       *models.RecordID `json:"id,omitempty"`
 	Name     string           `json:"name"`
@@ -455,5 +462,105 @@ func ListInactive(surrealHost, token string) (agents []Agent, err error) {
 	for _, qr := range *res {
 		agents = qr.Result
 	}
+	return
+}
+
+// surreal host, token, agentName, note name
+func CreateNote(surrealHost, token, agentName, name string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	exists := fmt.Sprintf(`SELECT * FROM notes WHERE name = '%s' AND linkedAgent = '%s'`, name, agentName)
+	res, err := surrealdb.Query[[]Note](ctx, sdb, exists, map[string]any{})
+	if err != nil {
+		return
+	}
+	for _, qr := range *res {
+		if len(qr.Result) > 0 {
+			return fmt.Errorf("record exists!")
+		}
+	}
+	NewNote := Note{
+		Name:        name,
+		Content:     "",
+		LinkedAgent: agentName,
+	}
+	recordID := models.NewRecordID(`notes`, NewNote)
+	_, err = surrealdb.Create[Note](ctx, sdb, recordID, NewNote)
+
+	// no relate because I don't wanna
+	return
+}
+
+func GetNotes(surrealHost, token, agentName string) (notes []string, err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	exists := fmt.Sprintf(`SELECT name FROM notes WHERE linkedAgent = '%s'`, agentName)
+	res, err := surrealdb.Query[[]string](ctx, sdb, exists, map[string]any{})
+	if err != nil {
+		return
+	}
+	for _, qr := range *res {
+		return qr.Result, nil
+	}
+	return
+}
+
+// content is base64 encoded to prevent issues in DB and from API
+func UpdateRecord(surrealHost, token, agentName, name, content string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	exists := fmt.Sprintf(`SELECT * FROM notes WHERE linkedAgent = '%s' AND name = '%s'`, agentName, name)
+	res, err := surrealdb.Query[Note](ctx, sdb, exists, map[string]any{})
+	if err != nil {
+		return
+	}
+	var record Note
+	for _, qr := range *res {
+		record = qr.Result
+	}
+	record.Content = content
+	_, err = surrealdb.Update[Note](ctx, sdb, *record.ID, record)
 	return
 }

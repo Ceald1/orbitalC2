@@ -20,6 +20,13 @@ definitions:
       os:
         type: string
     type: object
+  routes.Note:
+    properties:
+      content:
+        type: string
+      name:
+        type: string
+    type: object
   routes.TokenResponse:
     properties:
       token:
@@ -180,6 +187,38 @@ paths:
       summary: list inactive agents
       tags:
       - user
+  /api/v1/notes/{name}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/routes.Note'
+              type: array
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List notes on an agent
+      tags:
+      - agent notes
   /api/v1/user/login:
     post:
       consumes:

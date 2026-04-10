@@ -53,6 +53,11 @@ func main() {
 			"message": "pong",
 		})
 	})
+	noteGroup := v1.Group("/notes")
+	noteGroup.GET("/:name", func(ctx *gin.Context) {
+		orbitalRoutes.ListNotes(ctx, surrealHost)
+	})
+
 	userGroup := v1.Group("/user")
 	userGroup.POST("/login", func(ctx *gin.Context) {
 		orbitalRoutes.APIUserLogin(ctx, surrealHost)
