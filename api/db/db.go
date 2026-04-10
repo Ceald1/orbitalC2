@@ -428,3 +428,32 @@ func ListAgents(surrealHost, token string) (agents []AgentBeacon, err error) {
 	agents = *res
 	return agents, nil
 }
+
+func ListInactive(surrealHost, token string) (agents []Agent, err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	query := `SELECT * FROM agent WHERE count(->Beacon->agentBeacon) = 0;`
+	res, err := surrealdb.Query[[]Agent](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+
+	for _, qr := range *res {
+		agents = qr.Result
+	}
+	return
+}

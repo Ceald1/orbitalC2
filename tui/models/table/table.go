@@ -22,6 +22,7 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
+	m.table.Focus()
 	Selected = ""
 	return nil
 }
@@ -32,15 +33,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
-			return m, tea.Quit
-			//if m.table.Focused() {
-			//	m.table.Blur()
-			//} else {
-			//	m.table.Focus()
-			//}
+			// return m, tea.Quit
+			if m.table.Focused() {
+				m.table.Blur()
+			} else {
+				m.table.Focus()
+			}
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "up", "w":
+			m.table.MoveUp(1)
+		case "down", "s":
+			m.table.MoveDown(1)
 		case "enter":
+			if m.table.SelectedRow() == nil {
+				return m, tea.Quit
+			}
 			Selected = m.table.SelectedRow()[1] // agent name
 			return m, tea.Quit
 		}
@@ -57,17 +65,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table.SetColumns(newColumns)
 		m.table.SetWidth(width)
 		m.table.SetHeight(height - 20)
-		//		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-		//		width = width - 3
-		//		newColumns := make([]table.Column, 0)
-		//		for _, column := range m.table.Columns() {
-		//			column_width := width - 1
-		//			column.Width = column_width / 4
-		//			newColumns = append(newColumns, column)
-		//		}
-		//		m.table.SetColumns(newColumns)
-		//		m.table.SetWidth(width)
-		//		m.table.SetHeight(height - 20)
 
 	}
 	m.table, cmd = m.table.Update(msg)
@@ -90,17 +87,7 @@ func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 		{Title: "Last Checked", Width: colWidth},
 		{Title: "OS", Width: colWidth},
 	}
-	//	width, height, err := term.GetSize(int(os.Stdin.Fd()))
-	//	width = width - 3
-	//	if err != nil {
-	//		return
-	//	}
-	//	columns := []table.Column{
-	//		{Title: "ID", Width: int(width/4) - 1},
-	//		{Title: "Name", Width: int(width/4) - 1},
-	//		{Title: "Last Checked", Width: int(width/4) - 1},
-	//		{Title: "OS", Width: int(width/4) - 1},
-	//	}
+
 	rows := make([]table.Row, 0)
 	for i, agent := range agents {
 		row := table.Row{

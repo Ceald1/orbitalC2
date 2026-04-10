@@ -45,3 +45,13 @@ func MainMenu() (option string) {
 	).WithTheme(new(styles.CustomTheme)).Run()
 	return option
 }
+
+func CreateAgentMenu() (name string) {
+	fmt.Print("\033[H\033[2J")
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().Prompt("Name > ").Value(&name),
+		).Title("New Agent"),
+	).WithTheme(new(styles.CustomTheme)).Run()
+	return
+}

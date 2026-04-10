@@ -156,6 +156,30 @@ paths:
       summary: list agents
       tags:
       - user
+  /api/v1/agent/list/inactive:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/routes.AgentParsed'
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: list inactive agents
+      tags:
+      - user
   /api/v1/user/login:
     post:
       consumes:

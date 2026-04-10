@@ -56,5 +56,77 @@ func GetAgents(APIHost, token string) (agents []APIROUTES.AgentParsed, err error
 	}
 	agents = result["result"]
 	return
+}
 
+func GetInactiveAgents(APIHost, token string) (agents []APIROUTES.AgentParsed, err error) {
+	url := fmt.Sprintf("%s/api/v1/agent/list/inactive", APIHost)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string][]APIROUTES.AgentParsed
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	agents = result["result"]
+
+	return
+}
+
+func DeleteAgent(APIHost, token, agent string) (err error) {
+	url := fmt.Sprintf("%s/api/v1/agent/delete/%s", APIHost, agent)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result["error"] != "" {
+		return fmt.Errorf("%s", result["error"])
+	}
+	return nil
+}
+
+func CreateAgent(APIHost, token, agent string) (tokenAgent string, err error) {
+	url := fmt.Sprintf("%s/api/v1/agent/create/%s", APIHost, agent)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result["error"] != "" {
+		err = fmt.Errorf("%s", result["error"])
+		return
+	}
+	tokenAgent = result["result"]
+	return
 }

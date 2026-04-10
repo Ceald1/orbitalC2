@@ -67,6 +67,9 @@ func main() {
 	agentGroup.GET("/list", func(ctx *gin.Context) {
 		orbitalRoutes.ListAgents(ctx, surrealHost)
 	})
+	agentGroup.GET("/list/inactive", func(ctx *gin.Context) {
+		orbitalRoutes.ListInactiveAgents(ctx, surrealHost)
+	})
 	agentAgentGroup := agentGroup.Group("/agent")
 	agentAgentGroup.POST("/login", func(ctx *gin.Context) {
 		orbitalRoutes.AgentCheckin(ctx, surrealHost)
