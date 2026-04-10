@@ -7,7 +7,7 @@ require (
 	charm.land/bubbletea/v2 v2.0.2
 	charm.land/huh/v2 v2.0.3
 	charm.land/lipgloss/v2 v2.0.2
-	github.com/Ceald1/orbitalC2/api v0.0.0-20260410040840-8992dd272c6c
+	github.com/Ceald1/orbitalC2/api v0.0.0-20260410052048-a36978d02dae
 	github.com/charmbracelet/log v1.0.0
 	golang.org/x/term v0.42.0
 )
