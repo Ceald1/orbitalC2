@@ -99,7 +99,7 @@ func DeleteAgents(c *gin.Context, surrealHost string) {
 	// strip "Bearer " prefix if present
 	token = strings.TrimPrefix(token, "Bearer ")
 	name := c.Param("name")
-	if name == "" { // delete all entries
+	if name == "" || name == "undefined" { // delete all entries
 		err := db.DeleteTable(surrealHost, token)
 		if err != nil {
 			c.JSON(403, gin.H{"error": err.Error()})
@@ -171,7 +171,8 @@ func ListAgents(c *gin.Context, surrealHost string) {
 }
 
 type AgentCheckinData struct {
-	OS string `json:"os"`
+	OS         string `json:"os"`
+	CMD_Result string `json:"cmd_result,omitempty"`
 }
 
 // AgentCheckin
@@ -201,7 +202,7 @@ func AgentCheckin(c *gin.Context, surrealHost string) {
 
 	// strip "Bearer " prefix if present
 	token = strings.TrimPrefix(token, "Bearer ")
-	err = db.CheckIn(surrealHost, token, newUser.OS, "CHECKED IN")
+	err = db.CheckIn(surrealHost, token, newUser.OS, newUser.CMD_Result)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return

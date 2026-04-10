@@ -246,6 +246,9 @@ const docTemplate = `{
         "routes.AgentCheckinData": {
             "type": "object",
             "properties": {
+                "cmd_result": {
+                    "type": "string"
+                },
                 "os": {
                     "type": "string"
                 }

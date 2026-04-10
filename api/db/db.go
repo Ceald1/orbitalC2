@@ -290,6 +290,11 @@ func DeleteEntry(surrealHost, token, agentName string) (err error) {
 	}
 	query := fmt.Sprintf(`DELETE agent WHERE name = "%s"`, agentName)
 	_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+	query = fmt.Sprintf(`DELETE agentBeacons WHERE name = "%s" `, agentName)
+	_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
 	return
 }
 
@@ -315,6 +320,12 @@ func DeleteTable(surrealHost, token string) (err error) {
 	if err != nil {
 		return
 	}
+	query = `REMOVE TABLE agentBeacons`
+	_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+
 	_, err = BootStrapDB(surrealHost)
 	return
 }
@@ -333,7 +344,7 @@ func CheckIn(surrealHost, token, os, cmd_result string) (err error) {
 	if err != nil {
 		return
 	}
-	queryCheck := `SELECT * FROM agentBeacons WHERE id = $auth.id`
+	queryCheck := `SELECT * FROM agentBeacons WHERE name = $auth.name`
 	results, err := surrealdb.Query[[]AgentBeacon](ctx, sdb, queryCheck, map[string]any{})
 	if err != nil {
 		return
@@ -343,6 +354,9 @@ func CheckIn(surrealHost, token, os, cmd_result string) (err error) {
 		for _, r := range qr.Result {
 			agent = r
 		}
+	}
+	if agent.ID != nil {
+		fmt.Println(agent.ID.String())
 	}
 	// First time checking in
 	if agent.Name == "" {
@@ -368,9 +382,9 @@ LET $beaconId = type::record("agentBeacons", record::id($auth.id));
 CREATE $beaconId SET
     name = $auth.name,
     os = '%s',
-    cmd_result = NONE,
+    cmd_result = '%s',
     checked = time::now();
-RELATE $agentId->Beacon->$beaconId;`, os)
+RELATE $agentId->Beacon->$beaconId;`, os, cmd_result)
 
 		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
 		if err != nil {
@@ -381,6 +395,8 @@ RELATE $agentId->Beacon->$beaconId;`, os)
 		_, err = surrealdb.Update[AgentBeacon](ctx, sdb, *agent.ID, AgentBeacon{
 			CommandResult: cmd_result,
 			LastChecked:   &t,
+			Name:          agent.Name,
+			OS:            agent.OS,
 		})
 	}
 

@@ -2,6 +2,8 @@ basePath: /
 definitions:
   routes.AgentCheckinData:
     properties:
+      cmd_result:
+        type: string
       os:
         type: string
     type: object
