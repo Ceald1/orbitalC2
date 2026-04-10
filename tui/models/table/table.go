@@ -46,7 +46,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		width, height, _ := term.GetSize(int(os.Stdin.Fd()))
-		m.table.SetWidth(width - 3)
+		width = width - 3
+		newColumns := make([]table.Column, 0)
+		for _, column := range m.table.Columns() {
+			column_width := width - 1
+			column.Width = column_width / 4
+			newColumns = append(newColumns, column)
+		}
+		m.table.SetColumns(newColumns)
+		m.table.SetWidth(width)
 		m.table.SetHeight(height - 20)
 
 	}
@@ -60,11 +68,16 @@ func (m Model) View() tea.View {
 
 func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 	fmt.Print("\033[H\033[2J")
+	width, height, err := term.GetSize(int(os.Stdin.Fd()))
+	width = width - 3
+	if err != nil {
+		return
+	}
 	columns := []table.Column{
-		{Title: "ID", Width: 4},
-		{Title: "Name", Width: 20},
-		{Title: "Last Checked", Width: 20},
-		{Title: "OS", Width: 10},
+		{Title: "ID", Width: int(width/4) - 1},
+		{Title: "Name", Width: int(width/4) - 1},
+		{Title: "Last Checked", Width: int(width/4) - 1},
+		{Title: "OS", Width: int(width/4) - 1},
 	}
 	rows := make([]table.Row, 0)
 	for i, agent := range agents {
@@ -76,15 +89,12 @@ func NewTable(agents []routes.AgentParsed) (selectedAgent string, err error) {
 		}
 		rows = append(rows, row)
 	}
-	width, height, err := term.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
-		return
-	}
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithHeight(height-20),
-		table.WithWidth(width-3),
+		table.WithWidth(width),
 	)
 	s := table.DefaultStyles()
 	s.Header = s.Header.BorderStyle(lipgloss.NormalBorder()).
