@@ -105,19 +105,36 @@ MAINMENU:
 			if SelectedNote == "EXIT" {
 				goto AGENTS
 			}
-			content, err := req.GetNoteContent(url, token, s, SelectedNote)
-			if err != nil {
-				log.Fatal(err)
+		NOTES2:
+			noteOption := forms.NoteMenu2(SelectedNote)
+			if noteOption == "edit" {
+				content, err := req.GetNoteContent(url, token, s, SelectedNote)
+				if err != nil {
+					log.Fatal(err)
+				}
+				data, _ := base64.StdEncoding.DecodeString(content)
+				err = editorModels.RunNotes(string(data))
+				if err != nil {
+					log.Fatal(err)
+				}
+				content = editorModels.NoteText
+				err = req.UpdateNote(url, token, s, SelectedNote, content)
+				if err != nil {
+					log.Fatal(err)
+				} else {
+					goto NOTES2
+				}
 			}
-			data, _ := base64.StdEncoding.DecodeString(content)
-			err = editorModels.RunNotes(string(data))
-			if err != nil {
-				log.Fatal(err)
-			}
-			content = editorModels.NoteText
-			err = req.UpdateNote(url, token, s, SelectedNote, content)
-			if err != nil {
-				log.Fatal(err)
+			if noteOption == "delete" {
+				confirm := forms.DeleteNote()
+				if confirm {
+					err = req.DeleteNote(url, token, s, SelectedNote)
+					if err != nil {
+						log.Fatal(err)
+					} else {
+						goto NOTES2
+					}
+				}
 			} else {
 				goto NOTES
 			}

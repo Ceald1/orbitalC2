@@ -293,6 +293,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/notes/delete/{name}/{noteName}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent notes"
+                ],
+                "summary": "delete note from note name and agent name.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Note Name",
+                        "name": "noteName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/notes/update/{name}/{noteName}": {
             "post": {
                 "security": [

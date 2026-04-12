@@ -622,3 +622,33 @@ func UpdateNote(surrealHost, token, agentName, name, content string) (err error)
 	_, err = surrealdb.Update[Note](ctx, sdb, *record.ID, record)
 	return
 }
+
+func DeleteNote(surrealHost, token, agentName, name string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	exists := fmt.Sprintf(`SELECT * FROM notes WHERE linkedAgent = '%s' AND name = '%s'`, agentName, name)
+	res, err := surrealdb.Query[[]Note](ctx, sdb, exists, map[string]any{})
+	if err != nil {
+		return
+	}
+	var record Note
+	for _, qr := range *res {
+		record = qr.Result[0]
+	}
+	_, err = surrealdb.Delete[Note](ctx, sdb, *record.ID)
+	return
+}

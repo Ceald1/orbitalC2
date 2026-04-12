@@ -74,6 +74,9 @@ func main() {
 	noteGroup.POST("/update/:name/:noteName", func(ctx *gin.Context) {
 		orbitalRoutes.UpdateNote(ctx, surrealHost)
 	})
+	noteGroup.GET("/delete/:name/:noteName", func(ctx *gin.Context) {
+		orbitalRoutes.DeleteNote(ctx, surrealHost)
+	})
 
 	userGroup := v1.Group("/user")
 	userGroup.POST("/login", func(ctx *gin.Context) {

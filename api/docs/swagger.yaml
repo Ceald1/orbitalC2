@@ -287,6 +287,41 @@ paths:
       summary: create note from note name and agent name.
       tags:
       - agent notes
+  /api/v1/notes/delete/{name}/{noteName}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Note Name
+        in: path
+        name: noteName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: delete note from note name and agent name.
+      tags:
+      - agent notes
   /api/v1/notes/update/{name}/{noteName}:
     post:
       consumes:

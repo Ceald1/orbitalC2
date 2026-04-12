@@ -73,3 +73,30 @@ func NoteMenu(noteNames []string, selectedAgent string) (selectedNote string) {
 	fmt.Print("\033[H\033[2J")
 	return
 }
+
+// manage notes
+func NoteMenu2(noteName string) (selectedOption string) {
+	fmt.Print("\033[H\033[2J")
+
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().Options(
+				huh.NewOption("edit", "edit"),
+				huh.NewOption("delete", "delete"),
+				huh.NewOption("return to menu", "EXIT"),
+			).Value(&selectedOption),
+		).Title(fmt.Sprintf("Options for note: %s", noteName)),
+	).WithTheme(new(styles.CustomTheme)).Run()
+	return selectedOption
+}
+
+func DeleteNote() (areSure bool) {
+	fmt.Print("\033[H\033[2J")
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().Affirmative("Yes").Negative("No").Value(&areSure),
+		).Title("Are you sure?"),
+	).WithTheme(new(styles.CustomTheme)).Run()
+
+	return areSure
+}

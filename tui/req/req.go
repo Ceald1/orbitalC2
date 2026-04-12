@@ -197,32 +197,6 @@ func UpdateNote(APIHost, token, agent, NoteName, content string) (err error) {
 	return nil
 }
 
-//func GetNotes(APIHost, token, agent string) (NoteList []string, err error) {
-//	url := fmt.Sprintf("%s/api/v1/notes/%s", APIHost, agent)
-//	req, err := http.NewRequest("GET", url, nil)
-//	if err != nil {
-//		return
-//	}
-//	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-//	req.Header.Set("Content-Type", "application/json")
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return
-//	}
-//	var result map[string]interface{} // either string result or array
-//	err = json.NewDecoder(resp.Body).Decode(&result)
-//	if err != nil {
-//		return
-//	}
-//	if result["error"].(string) != "" {
-//		err = fmt.Errorf("%s", result["error"])
-//		return
-//	}
-//	NoteList = result["result"].([]string)
-//	return
-//}
-
 func GetNoteContent(APIHost, token, agent, SelectedNote string) (content string, err error) {
 	url := fmt.Sprintf("%s/api/v1/notes/%s/%s", APIHost, agent, SelectedNote)
 	req, err := http.NewRequest("GET", url, nil)
@@ -246,5 +220,30 @@ func GetNoteContent(APIHost, token, agent, SelectedNote string) (content string,
 		return
 	}
 	content = result["result"]
+	return
+}
+
+func DeleteNote(APIHost, token, agent, SelectedNote string) (err error) {
+	url := fmt.Sprintf("%s/api/v1/notes/delete/%s/%s", APIHost, agent, SelectedNote)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result["error"] != "" {
+		err = fmt.Errorf("%s", result["error"])
+		return
+	}
 	return
 }

@@ -330,6 +330,42 @@ func NewNote(c *gin.Context, surrealHost string) {
 
 }
 
+// DeleteNote
+// @Summary delete note from note name and agent name.
+// @Tags agent notes
+// @Accept json
+// @Produce json
+// @Param name path string true "Agent Name"
+// @Param noteName path string true "Note Name"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/notes/delete/{name}/{noteName} [get]
+func DeleteNote(c *gin.Context, surrealHost string) {
+
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(403, gin.H{"error": "no agent specified"})
+		return
+	}
+	noteName := c.Param("noteName")
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	err := db.DeleteNote(surrealHost, token, name, noteName)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"result": "ok"})
+
+}
+
 type NoteContent struct {
 	Content string `json:"content"`
 }
