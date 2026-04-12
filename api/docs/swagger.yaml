@@ -20,11 +20,9 @@ definitions:
       os:
         type: string
     type: object
-  routes.Note:
+  routes.NoteContent:
     properties:
       content:
-        type: string
-      name:
         type: string
     type: object
   routes.TokenResponse:
@@ -205,7 +203,7 @@ paths:
           schema:
             additionalProperties:
               items:
-                $ref: '#/definitions/routes.Note'
+                type: string
               type: array
             type: object
         "403":
@@ -217,6 +215,117 @@ paths:
       security:
       - BearerAuth: []
       summary: List notes on an agent
+      tags:
+      - agent notes
+  /api/v1/notes/{name}/{noteName}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Note Name
+        in: path
+        name: noteName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: get note from agent name and note name, returns base64
+      tags:
+      - agent notes
+  /api/v1/notes/create/{name}/{noteName}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Note Name
+        in: path
+        name: noteName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: create note from note name and agent name.
+      tags:
+      - agent notes
+  /api/v1/notes/update/{name}/{noteName}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Note Name
+        in: path
+        name: noteName
+        required: true
+        type: string
+      - description: note content
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.NoteContent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: update note from note name and agent name.
       tags:
       - agent notes
   /api/v1/user/login:

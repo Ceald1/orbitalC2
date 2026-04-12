@@ -221,17 +221,12 @@ type Note struct {
 // @Accept json
 // @Produce json
 // @Param name path string true "Agent Name"
-// @Success 200 {object} map[string][]Note
+// @Success 200 {object} map[string][]string
 // @Failure 403 {object} map[string]string
 // @Security BearerAuth
 // @Router /api/v1/notes/{name} [get]
 func ListNotes(c *gin.Context, surrealHost string) {
-	var newUser AgentCheckinData
-	err := c.ShouldBindBodyWithJSON(&newUser)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		return
-	}
+
 	name := c.Param("name")
 	if name == "" {
 		c.JSON(403, gin.H{"error": "no agent specified"})
@@ -243,19 +238,148 @@ func ListNotes(c *gin.Context, surrealHost string) {
 		c.Abort()
 		return
 	}
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
 	NotesDB, err := db.GetNotes(surrealHost, token, name)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error in db query": err.Error()})
+		return
+	}
+	var Notes []string
+	for _, noteDB := range NotesDB {
+		//note := Note{
+		//	Name: noteDB,
+		//}
+		Notes = append(Notes, noteDB)
+	}
+	c.JSON(200, gin.H{"result": Notes})
+}
+
+// GetNote
+// @Summary get note from agent name and note name, returns base64
+// @Tags agent notes
+// @Accept json
+// @Produce json
+// @Param name path string true "Agent Name"
+// @Param noteName path string true "Note Name"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/notes/{name}/{noteName} [get]
+func GetNote(c *gin.Context, surrealHost string) {
+
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(403, gin.H{"error": "no agent specified"})
+		return
+	}
+	noteName := c.Param("noteName")
+	if noteName == "" {
+		c.JSON(403, gin.H{"error": "no noteName specified"})
+		return
+	}
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	NotesDB, err := db.GetNote(surrealHost, token, name, noteName)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
-	var Notes []Note
-	for _, noteDB := range NotesDB {
-		note := Note{
-			Name: noteDB,
-		}
-		Notes = append(Notes, note)
+	c.JSON(200, gin.H{"result": NotesDB})
+}
+
+// CreateNote
+// @Summary create note from note name and agent name.
+// @Tags agent notes
+// @Accept json
+// @Produce json
+// @Param name path string true "Agent Name"
+// @Param noteName path string true "Note Name"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/notes/create/{name}/{noteName} [get]
+func NewNote(c *gin.Context, surrealHost string) {
+
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(403, gin.H{"error": "no agent specified"})
+		return
 	}
-	c.JSON(200, gin.H{"result": Notes})
+	noteName := c.Param("noteName")
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	err := db.CreateNote(surrealHost, token, name, noteName)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"result": "ok"})
+
+}
+
+type NoteContent struct {
+	Content string `json:"content"`
+}
+
+// UpdateNote
+// @Summary update note from note name and agent name.
+// @Tags agent notes
+// @Accept json
+// @Produce json
+// @Param name path string true "Agent Name"
+// @Param noteName path string true "Note Name"
+// @Param body body NoteContent true "note content"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/notes/update/{name}/{noteName} [post]
+func UpdateNote(c *gin.Context, surrealHost string) {
+	var newNoteContent NoteContent
+	err := c.ShouldBindBodyWithJSON(&newNoteContent)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(403, gin.H{"error": "no agent specified"})
+		return
+	}
+	noteName := c.Param("noteName")
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	_, err = base64.RawStdEncoding.DecodeString(newNoteContent.Content)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	err = db.UpdateNote(surrealHost, token, name, noteName, newNoteContent.Content)
+	// err := db.CreateNote(surrealHost, token, name, noteName)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"result": "ok"})
+
 }
 
 // ------------------- agent side crap

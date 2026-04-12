@@ -10,17 +10,17 @@
 package main
 
 import (
-	"net/http"
-	"os"
-
 	"github.com/Ceald1/orbitalC2/api/db"
 	_ "github.com/Ceald1/orbitalC2/api/docs"
 	orbitalRoutes "github.com/Ceald1/orbitalC2/api/routes"
 	"github.com/charmbracelet/log"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -42,6 +42,13 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // or lock to "http://localhost:8080"
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false,
+	}))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Any("/", func(ctx *gin.Context) {
 		ctx.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
@@ -56,6 +63,16 @@ func main() {
 	noteGroup := v1.Group("/notes")
 	noteGroup.GET("/:name", func(ctx *gin.Context) {
 		orbitalRoutes.ListNotes(ctx, surrealHost)
+	})
+	noteGroup.GET("/:name/:noteName", func(ctx *gin.Context) {
+		orbitalRoutes.GetNote(ctx, surrealHost)
+	})
+
+	noteGroup.GET("/create/:name/:noteName", func(ctx *gin.Context) {
+		orbitalRoutes.NewNote(ctx, surrealHost)
+	})
+	noteGroup.POST("/update/:name/:noteName", func(ctx *gin.Context) {
+		orbitalRoutes.UpdateNote(ctx, surrealHost)
 	})
 
 	userGroup := v1.Group("/user")
