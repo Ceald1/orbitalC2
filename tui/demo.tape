@@ -1,6 +1,6 @@
 Output demo.gif
 
-Set FontSize 30
+Set FontSize 20
 Set Width 1920
 Set Height 1080
 
@@ -36,3 +36,13 @@ Enter
 Sleep 2s
 
 Enter
+
+Sleep 1s
+
+Enter
+
+Sleep 1s
+
+Tab
+
+Sleep 2s
