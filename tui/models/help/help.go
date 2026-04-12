@@ -119,7 +119,7 @@ func (m Model) View() tea.View {
 	}
 
 	var status string
-	status = m.inputStyle.Render("↑/w up • ↓/s down • ←/a left • →/d right • enter to select")
+	status = m.inputStyle.Render("↑/w up • ↓/s down • ←/a left • →/d right • enter to select • esc/ctrl+c/q to quit")
 	// if m.lastKey == "" {
 	// 	status = "Waiting for input..."
 	// } else {

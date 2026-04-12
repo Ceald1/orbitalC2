@@ -2,6 +2,7 @@ package req
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -128,5 +129,122 @@ func CreateAgent(APIHost, token, agent string) (tokenAgent string, err error) {
 		return
 	}
 	tokenAgent = result["result"]
+	return
+}
+
+type notesResponse struct {
+	Error  string   `json:"error"`
+	Result []string `json:"result"`
+}
+
+func GetNotes(APIHost, token, agent string) (NoteList []string, err error) {
+	url := fmt.Sprintf("%s/api/v1/notes/%s", APIHost, agent)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	var result notesResponse
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result.Error != "" {
+		err = fmt.Errorf("%s", result.Error)
+		return
+	}
+	NoteList = result.Result
+	return
+}
+
+func UpdateNote(APIHost, token, agent, NoteName, content string) (err error) {
+	url := fmt.Sprintf("%s/api/v1/notes/update/%s/%s", APIHost, agent, NoteName)
+	encoded := base64.RawStdEncoding.EncodeToString([]byte(content))
+	noteContent := APIROUTES.NoteContent{
+		Content: encoded,
+	}
+	body, err := json.Marshal(noteContent)
+	if err != nil {
+		return
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	var result map[string]string
+	json.NewDecoder(resp.Body).Decode(&result)
+	if result["error"] != "" {
+		err = fmt.Errorf("%s", result["error"])
+		return
+	}
+	return nil
+}
+
+//func GetNotes(APIHost, token, agent string) (NoteList []string, err error) {
+//	url := fmt.Sprintf("%s/api/v1/notes/%s", APIHost, agent)
+//	req, err := http.NewRequest("GET", url, nil)
+//	if err != nil {
+//		return
+//	}
+//	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+//	req.Header.Set("Content-Type", "application/json")
+//	client := &http.Client{}
+//	resp, err := client.Do(req)
+//	if err != nil {
+//		return
+//	}
+//	var result map[string]interface{} // either string result or array
+//	err = json.NewDecoder(resp.Body).Decode(&result)
+//	if err != nil {
+//		return
+//	}
+//	if result["error"].(string) != "" {
+//		err = fmt.Errorf("%s", result["error"])
+//		return
+//	}
+//	NoteList = result["result"].([]string)
+//	return
+//}
+
+func GetNoteContent(APIHost, token, agent, SelectedNote string) (content string, err error) {
+	url := fmt.Sprintf("%s/api/v1/notes/%s/%s", APIHost, agent, SelectedNote)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result["error"] != "" {
+		err = fmt.Errorf("%s", result["error"])
+		return
+	}
+	content = result["result"]
 	return
 }

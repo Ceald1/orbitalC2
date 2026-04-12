@@ -4,7 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"encoding/base64"
 	"github.com/Ceald1/orbitalC2/tui/models/forms"
+	editorModels "github.com/Ceald1/orbitalC2/tui/models/notes"
 	"github.com/Ceald1/orbitalC2/tui/models/table"
 	"github.com/Ceald1/orbitalC2/tui/req"
 	"github.com/atotto/clipboard"
@@ -76,6 +78,7 @@ MAINMENU:
 		}
 		goto DELETEAGENTS
 	case "agents":
+	AGENTS:
 		agents, err := req.GetAgents(url, token)
 		if err != nil {
 			log.Fatal(err)
@@ -90,9 +93,34 @@ MAINMENU:
 			log.Fatal(err)
 		}
 		if s == "" {
+
 			goto MAINMENU
 		} else {
-			log.Info(s) // agent menu
+			notes, err := req.GetNotes(url, token, s)
+			if err != nil {
+				log.Fatal(err)
+			}
+		NOTES:
+			SelectedNote := forms.NoteMenu(notes, s)
+			if SelectedNote == "EXIT" {
+				goto AGENTS
+			}
+			content, err := req.GetNoteContent(url, token, s, SelectedNote)
+			if err != nil {
+				log.Fatal(err)
+			}
+			data, _ := base64.StdEncoding.DecodeString(content)
+			err = editorModels.RunNotes(string(data))
+			if err != nil {
+				log.Fatal(err)
+			}
+			content = editorModels.NoteText
+			err = req.UpdateNote(url, token, s, SelectedNote, content)
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				goto NOTES
+			}
 		}
 	}
 }

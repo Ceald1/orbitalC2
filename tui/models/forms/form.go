@@ -55,3 +55,21 @@ func CreateAgentMenu() (name string) {
 	).WithTheme(new(styles.CustomTheme)).Run()
 	return
 }
+
+func NoteMenu(noteNames []string, selectedAgent string) (selectedNote string) {
+	var ops []huh.Option[string]
+	fmt.Print("\033[H\033[2J")
+	for _, note := range noteNames {
+		option := huh.NewOption(note, note)
+		ops = append(ops, option)
+	}
+	ops = append(ops, huh.NewOption("return to prev", "EXIT"))
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().Options(ops...).Value(&selectedNote),
+		).Title(fmt.Sprintf("Notes for %s", selectedAgent)),
+	).WithTheme(new(styles.CustomTheme)).Run()
+
+	fmt.Print("\033[H\033[2J")
+	return
+}

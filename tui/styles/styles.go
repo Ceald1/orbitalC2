@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 
+	"charm.land/glamour/v2/ansi"
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 )
@@ -189,4 +190,162 @@ func ShowColors() {
 
 		fmt.Println(block.Render(" ") + " " + c.name)
 	}
+}
+
+const (
+	colBgDark      = "#201C28"
+	colTextPrimary = "#949494"
+	colTextMuted   = "#90859C"
+	colAccentSoft  = "#C58D84"
+	colHighlight   = "#F8D0CC"
+)
+
+func ptr[T any](v T) *T { return &v }
+
+var OrbitalStyle = ansi.StyleConfig{
+	Document: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			BackgroundColor: ptr(colBgDark),
+			Color:           ptr(colTextPrimary),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	Paragraph: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			BackgroundColor: ptr(colBgDark),
+			Color:           ptr(colTextPrimary),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H1: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colHighlight),
+			BackgroundColor: ptr(colBgDark),
+			Bold:            ptr(true),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H2: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colAccentSoft),
+			BackgroundColor: ptr(colBgDark),
+			Bold:            ptr(true),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H3: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colAccentSoft),
+			BackgroundColor: ptr(colBgDark),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H4: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colTextMuted),
+			BackgroundColor: ptr(colBgDark),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H5: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colTextMuted),
+			BackgroundColor: ptr(colBgDark),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	H6: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colTextMuted),
+			BackgroundColor: ptr(colBgDark),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	Strong: ansi.StylePrimitive{
+		Color:           ptr(colHighlight),
+		BackgroundColor: ptr(colBgDark),
+		Bold:            ptr(true),
+	},
+	Emph: ansi.StylePrimitive{
+		Color:           ptr(colAccentSoft),
+		BackgroundColor: ptr(colBgDark),
+		Italic:          ptr(true),
+	},
+	Code: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colAccentSoft),
+			BackgroundColor: ptr(colBgDark),
+		},
+		Margin: ptr(uint(0)),
+		//Padding: ptr(uint(0)),
+	},
+	CodeBlock: ansi.StyleCodeBlock{
+		StyleBlock: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color:           ptr(colTextPrimary),
+				BackgroundColor: ptr(colBgDark),
+			},
+			Margin: ptr(uint(0)),
+			//Padding: ptr(uint(1)),
+		},
+	},
+	List: ansi.StyleList{
+		StyleBlock: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color:           ptr(colTextPrimary),
+				BackgroundColor: ptr(colBgDark),
+			},
+			Margin: ptr(uint(0)),
+			//Padding: ptr(uint(0)),
+		},
+		LevelIndent: 2,
+	},
+	Item: ansi.StylePrimitive{
+		Color:           ptr(colTextPrimary),
+		BackgroundColor: ptr(colBgDark),
+	},
+	Link: ansi.StylePrimitive{
+		Color:           ptr(colAccentSoft),
+		BackgroundColor: ptr(colBgDark),
+		Underline:       ptr(true),
+	},
+	LinkText: ansi.StylePrimitive{
+		Color:           ptr(colHighlight),
+		BackgroundColor: ptr(colBgDark),
+	},
+	BlockQuote: ansi.StyleBlock{
+		StylePrimitive: ansi.StylePrimitive{
+			Color:           ptr(colTextMuted),
+			BackgroundColor: ptr(colBgDark),
+			Italic:          ptr(true),
+		},
+		Indent:      ptr(uint(1)),
+		IndentToken: ptr("│ "),
+		Margin:      ptr(uint(0)),
+		//Padding:     ptr(uint(0)),
+	},
+	HorizontalRule: ansi.StylePrimitive{
+		Color:           ptr(colTextMuted),
+		BackgroundColor: ptr(colBgDark),
+		Format:          "\n--------\n",
+	},
+	Table: ansi.StyleTable{
+		StyleBlock: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color:           ptr(colTextPrimary),
+				BackgroundColor: ptr(colBgDark),
+			},
+		},
+		CenterSeparator: ptr("┼"),
+		ColumnSeparator: ptr("│"),
+		RowSeparator:    ptr("─"),
+	},
 }

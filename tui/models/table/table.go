@@ -34,14 +34,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "esc":
-			// return m, tea.Quit
-			if m.table.Focused() {
-				m.table.Blur()
-			} else {
-				m.table.Focus()
-			}
-		case "q", "ctrl+c":
+		//case "esc":
+		//	// return m, tea.Quit
+		//	if m.table.Focused() {
+		//		m.table.Blur()
+		//	} else {
+		//		m.table.Focus()
+		//	}
+		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
 		case "up", "w":
 			m.table.MoveUp(1)
