@@ -247,3 +247,28 @@ func DeleteNote(APIHost, token, agent, SelectedNote string) (err error) {
 	}
 	return
 }
+
+func CreateNote(APIHost, token, agent, SelectedNote string) (err error) {
+	url := fmt.Sprintf("%s/api/v1/notes/create/%s/%s", APIHost, agent, SelectedNote)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	var result map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return
+	}
+	if result["error"] != "" {
+		err = fmt.Errorf("%s", result["error"])
+		return
+	}
+	return
+}

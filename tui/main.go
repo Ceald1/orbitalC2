@@ -96,14 +96,36 @@ MAINMENU:
 
 			goto MAINMENU
 		} else {
+		AGENTMENU:
+			action := forms.AgentMenu()
+			if action == "notes" {
+				goto NOTES
+			}
+			if action == "return" {
+				goto AGENTS
+			}
+			if action == "command" {
+				log.Info("commanding...")
+				goto AGENTMENU
+			}
+
+		NOTES:
 			notes, err := req.GetNotes(url, token, s)
 			if err != nil {
 				log.Fatal(err)
 			}
-		NOTES:
 			SelectedNote := forms.NoteMenu(notes, s)
-			if SelectedNote == "EXIT" {
-				goto AGENTS
+			if SelectedNote == "return to prev" {
+				goto AGENTMENU
+			}
+			if SelectedNote == "create note" {
+				NoteName := forms.CreateNote()
+				err = req.CreateNote(url, token, s, NoteName)
+				if err != nil {
+					log.Fatal(err)
+				} else {
+					goto NOTES
+				}
 			}
 		NOTES2:
 			noteOption := forms.NoteMenu2(SelectedNote)
@@ -132,7 +154,7 @@ MAINMENU:
 					if err != nil {
 						log.Fatal(err)
 					} else {
-						goto NOTES2
+						goto NOTES
 					}
 				}
 			} else {

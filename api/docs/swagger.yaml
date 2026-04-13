@@ -25,6 +25,13 @@ definitions:
       content:
         type: string
     type: object
+  routes.RunCommandData:
+    properties:
+      command:
+        type: string
+      directory:
+        type: string
+    type: object
   routes.TokenResponse:
     properties:
       token:
@@ -78,6 +85,42 @@ paths:
       summary: Agent checkin
       tags:
       - agent
+  /api/v1/agent/command/{name}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: command data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.RunCommandData'
+      - description: Agent Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Agent checkin
+      tags:
+      - user
   /api/v1/agent/create/{name}:
     get:
       consumes:

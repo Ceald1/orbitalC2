@@ -20,7 +20,7 @@ func NewToken() (username, password, APIHost string) {
 		huh.NewGroup(
 			huh.NewInput().Title(titleAPIHost).Value(&APIHost).Prompt(promptAPIHost).Placeholder("http://127.0.0.1:8080"),
 			huh.NewInput().Title(titleUser).Value(&username).Prompt(promptUser),
-			huh.NewInput().Title(titlePassword).Value(&password).Prompt(promptPassword),
+			huh.NewInput().Title(titlePassword).Value(&password).Prompt(promptPassword).EchoMode(huh.EchoModePassword),
 		),
 	)
 	form.WithTheme(theme)
@@ -56,6 +56,20 @@ func CreateAgentMenu() (name string) {
 	return
 }
 
+func AgentMenu() (action string) {
+	fmt.Print("\033[H\033[2J")
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().Options(
+				huh.NewOption("notes", "notes"),
+				huh.NewOption("command", "command"),
+				huh.NewOption("return", "return"),
+			).Value(&action),
+		).Title("Agent menu"),
+	).WithTheme(new(styles.CustomTheme)).Run()
+	return action
+}
+
 func NoteMenu(noteNames []string, selectedAgent string) (selectedNote string) {
 	var ops []huh.Option[string]
 	fmt.Print("\033[H\033[2J")
@@ -63,7 +77,9 @@ func NoteMenu(noteNames []string, selectedAgent string) (selectedNote string) {
 		option := huh.NewOption(note, note)
 		ops = append(ops, option)
 	}
-	ops = append(ops, huh.NewOption("return to prev", "EXIT"))
+	ops = append(ops, huh.NewOption("create note", "create note"))
+	ops = append(ops, huh.NewOption("return to prev", "return to prev"))
+
 	huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().Options(ops...).Value(&selectedNote),
@@ -99,4 +115,14 @@ func DeleteNote() (areSure bool) {
 	).WithTheme(new(styles.CustomTheme)).Run()
 
 	return areSure
+}
+
+func CreateNote() (noteName string) {
+	fmt.Print("\033[H\033[2J")
+	huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().Prompt("Enter Note Name > ").Value(&noteName),
+		).Title("Create New Note"),
+	).WithTheme(new(styles.CustomTheme)).Run()
+	return noteName
 }

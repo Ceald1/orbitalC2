@@ -95,6 +95,9 @@ func main() {
 	agentGroup.GET("/list/inactive", func(ctx *gin.Context) {
 		orbitalRoutes.ListInactiveAgents(ctx, surrealHost)
 	})
+	agentGroup.POST("/command/:name", func(ctx *gin.Context) {
+		orbitalRoutes.CMDAgent(ctx, surrealHost)
+	})
 	agentAgentGroup := agentGroup.Group("/agent")
 	agentAgentGroup.POST("/login", func(ctx *gin.Context) {
 		orbitalRoutes.AgentCheckin(ctx, surrealHost)

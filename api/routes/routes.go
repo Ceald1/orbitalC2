@@ -466,3 +466,64 @@ func AgentCheckin(c *gin.Context, surrealHost string) {
 	}
 	c.JSON(200, gin.H{"result": "ok"})
 }
+
+type RunCommandData struct {
+	Command   string `json:"command"`
+	Directory string `json:"directory"`
+}
+
+// CMDAgent
+// @Summary Agent checkin
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param body body RunCommandData true "command data"
+// @Param name path string true "Agent Name"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/agent/command/{name} [post]
+func CMDAgent(c *gin.Context, surrealHost string) {
+	var cmdData RunCommandData
+	err := c.ShouldBindBodyWithJSON(&cmdData)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(403, gin.H{"error": "no agent specified"})
+		return
+	}
+
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	_, err = base64.RawStdEncoding.DecodeString(cmdData.Command)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		c.Abort()
+		return
+	}
+	_, err = base64.RawStdEncoding.DecodeString(cmdData.Directory)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		c.Abort()
+		return
+	}
+
+	err = db.AddCommandToAgent(surrealHost, token, name, cmdData.Command, cmdData.Directory)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		c.Abort()
+		return
+	}
+	c.JSON(200, gin.H{"result": "ok"})
+}

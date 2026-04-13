@@ -46,10 +46,11 @@ type Note struct {
 }
 
 type Agent struct {
-	ID       *models.RecordID `json:"id,omitempty"`
-	Name     string           `json:"name"`
-	Password string           `json:"password"`
-	Command  string           `json:"command,omitempty"`
+	ID        *models.RecordID `json:"id,omitempty"`
+	Name      string           `json:"name"`
+	Password  string           `json:"password"`
+	Command   string           `json:"command,omitempty"`
+	Directory string           `json:"directory,omitempty"`
 }
 
 type AgentBeacon struct { // linked to Agent record (CAN be modified)
@@ -140,6 +141,7 @@ DEFINE FIELD checked ON TABLE agentBeacons TYPE datetime;
 DEFINE FIELD name ON TABLE agent TYPE string;
 DEFINE FIELD password ON TABLE agent TYPE string;
 DEFINE FIELD command ON TABLE agent TYPE option<string>;
+DEFINE FIELD directory ON TABLE agent TYPE option<string>;
 `
 	notes := `
 DEFINE TABLE OVERWRITE notes SCHEMAFULL;
@@ -650,5 +652,39 @@ func DeleteNote(surrealHost, token, agentName, name string) (err error) {
 		record = qr.Result[0]
 	}
 	_, err = surrealdb.Delete[Note](ctx, sdb, *record.ID)
+	return
+}
+
+// directory and command need to be base64 encoded
+func AddCommandToAgent(surrealHost, token, agentName, command, directory string) (err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	err = TokenCheck(sdb)
+	if err != nil {
+		return
+	}
+	query := fmt.Sprintf(`SELECT * FROM agent WHERE name = '%s'`, agentName)
+	res, err := surrealdb.Query[[]Agent](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+
+	var record Agent
+	for _, qr := range *res {
+		record = qr.Result[0]
+	}
+	record.Command = command
+	record.Directory = directory
+	_, err = surrealdb.Update[Agent](ctx, sdb, *record.ID, record)
 	return
 }
