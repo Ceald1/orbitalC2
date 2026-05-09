@@ -9,7 +9,8 @@ services:
     image: surrealdb/surrealdb:latest
     container_name: surrealdb
     restart: always
-    command: start --user ${SURREAL_ADMIN} --pass ${SURREAL_PASS} rocksdb://data/database.db
+    command: start --user ${SURREAL_ADMIN} --pass ${SURREAL_PASS}
+      rocksdb://data/database.db
     ports:
       - 127.0.0.1:8000:8000
     volumes:
@@ -27,6 +28,15 @@ services:
       memlock:
         soft: -1
         hard: -1
+  orbital:
+    build: ./
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    networks:
+      - orbital-internal
 
 networks:
   orbital-internal:
@@ -38,4 +48,3 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "true"
       com.docker.network.bridge.enable_icc: "true"
       com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
-

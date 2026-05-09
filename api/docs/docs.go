@@ -81,7 +81,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Agent checkin",
+                "summary": "Command agent",
                 "parameters": [
                     {
                         "description": "command data",
@@ -203,6 +203,42 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/agent/get_command": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "get command",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.RunCommandData"
                         }
                     },
                     "403": {

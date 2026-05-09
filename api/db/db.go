@@ -382,22 +382,7 @@ func CheckIn(surrealHost, token, os, cmd_result string) (err error) {
 	}
 	// First time checking in
 	if agent.Name == "" {
-		//		query := fmt.Sprintf(`
-		//CREATE agentBeacons SET
-		//		name = $auth.name,
-		//		os = '%s',
-		//		cmd_result = '',
-		//		checked = time::now();`, os)
-		//		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
-		//		if err != nil {
-		//			return
-		//		}
-		//		// link record
-		//		query = `
-		//LET $agent = (SELECT id FROM agent WHERE id = $auth.id)[0];
-		//LET $beacon = (SELECT id FROM agentBeacons WHERE name = $auth.name)[0];
-		//RELATE $agent->Beacon->$beacon;`
-		//		_, err = surrealdb.Query[any](ctx, sdb, query, map[string]any{})
+
 		query := fmt.Sprintf(`
 LET $agentId = $auth.id;
 LET $beaconId = type::record("agentBeacons", record::id($auth.id));
@@ -686,5 +671,31 @@ func AddCommandToAgent(surrealHost, token, agentName, command, directory string)
 	record.Command = command
 	record.Directory = directory
 	_, err = surrealdb.Update[Agent](ctx, sdb, *record.ID, record)
+	return
+}
+
+// get command for specific agent.
+func GetCommand(surrealHost, token string) (agent Agent, err error) {
+	sdb, err := surrealdb.FromEndpointURLString(ctx, surrealHost)
+	if err != nil {
+		return
+	}
+	err = sdb.Use(ctx, `Agents`, `Agents`)
+	if err != nil {
+		return
+	}
+	err = sdb.Authenticate(ctx, token)
+	if err != nil {
+		return
+	}
+	query := `SELECT * FROM agent WHERE id = record::id($auth.id)`
+	res, err := surrealdb.Query[[]Agent](ctx, sdb, query, map[string]any{})
+	if err != nil {
+		return
+	}
+
+	for _, qr := range *res {
+		agent = qr.Result[0]
+	}
 	return
 }

@@ -118,7 +118,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Agent checkin
+      summary: Command agent
       tags:
       - user
   /api/v1/agent/create/{name}:
@@ -180,6 +180,28 @@ paths:
       summary: Delete table
       tags:
       - user
+  /api/v1/agent/get_command:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.RunCommandData'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: get command
+      tags:
+      - agent
   /api/v1/agent/list:
     get:
       consumes:

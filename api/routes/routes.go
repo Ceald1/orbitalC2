@@ -473,7 +473,7 @@ type RunCommandData struct {
 }
 
 // CMDAgent
-// @Summary Agent checkin
+// @Summary Command agent
 // @Tags user
 // @Accept json
 // @Produce json
@@ -526,4 +526,36 @@ func CMDAgent(c *gin.Context, surrealHost string) {
 		return
 	}
 	c.JSON(200, gin.H{"result": "ok"})
+}
+
+// GetCMD
+// @Summary get command
+// @Tags agent
+// @Accept json
+// @Produce json
+// @Success 200 {object} RunCommandData
+// @Failure 403 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/agent/get_command [get]
+func GetCMD(c *gin.Context, surrealHost string) {
+	var cmdData RunCommandData
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(403, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+
+	// strip "Bearer " prefix if present
+	token = strings.TrimPrefix(token, "Bearer ")
+	result, err := db.GetCommand(surrealHost, token)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		c.Abort()
+		return
+	}
+	cmdData.Command = result.Command
+	cmdData.Directory = result.Directory
+
+	c.JSON(200, cmdData)
 }
