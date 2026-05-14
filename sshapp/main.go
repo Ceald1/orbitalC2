@@ -23,7 +23,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/Ceald1/orbitalC2/sshapp/models/forms"
+	"github.com/Ceald1/orbitalC2/sshapp/form"
 
 	"charm.land/wish/v2/logging"
 	//"github.com/Ceald1/orbitalC2/tui/models/table"
@@ -86,5 +86,5 @@ func main() {
 }
 
 func handler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	return forms.NewAppModel(url, token, s), []tea.ProgramOption{}
+	return form.NewAppModel(url, token, s), []tea.ProgramOption{}
 }
