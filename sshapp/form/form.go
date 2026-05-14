@@ -183,6 +183,15 @@ func (m *AppModel) buildForm() *huh.Form {
 		).WithTheme(new(styles.CustomTheme))
 
 	case "notes":
+		resp, err := req.GetNotes(m.APIHost, m.APIToken, m.SelectedAgent)
+		if err != nil {
+			ClearScreen(m.Sess)
+			wish.Println(m.Sess, err.Error())
+			time.Sleep(5 * time.Second)
+			return nil
+		} else {
+			m.NoteNames = resp
+		}
 		var ops []huh.Option[string]
 		for _, note := range m.NoteNames {
 			option := huh.NewOption(note, note)
@@ -220,7 +229,7 @@ func (m *AppModel) buildForm() *huh.Form {
 	case "createNote":
 		form := huh.NewForm(
 			huh.NewGroup(
-				huh.NewInput().Prompt("Enter Note Name > ").Value(&m.NoteName),
+				huh.NewInput().Prompt("Enter Note Name > ").Value(&m.NewNoteName),
 			).Title("Create New Note"),
 		).WithTheme(new(styles.CustomTheme))
 		return form
@@ -288,6 +297,28 @@ func (m *AppModel) transition() tea.Cmd {
 
 	case "manageAgent":
 		m.step = m.AgentAction
+	case "notes":
+		if m.SelectedNote == "create note" {
+			m.step = "createNote"
+		} else {
+			if m.SelectedNote == "return to prev" {
+				m.step = "agents"
+			} else {
+				m.step = "manageNote"
+			}
+		}
+	case "createNote":
+		err := req.CreateNote(m.APIHost, m.APIToken, m.SelectedAgent, m.NewNoteName)
+		if err != nil {
+			ClearScreen(m.Sess)
+			wish.Println(m.Sess, err.Error())
+			time.Sleep(5 * time.Second)
+		}
+		m.step = "notes"
+
+	case "manageNote":
+		m.step = m.NoteOption
+
 	}
 	m.form = m.buildForm()
 
